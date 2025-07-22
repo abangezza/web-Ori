@@ -1,32 +1,31 @@
-// src/models/Pelanggan.ts
+// src/models/ActivityLog.ts
 import mongoose, { Schema, model, models } from "mongoose";
 
-const PelangganSchema = new Schema(
+const ActivityLogSchema = new Schema(
   {
-    nama: {
-      type: String,
+    pelangganId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Pelanggan",
       required: true,
-      trim: true,
     },
-    noHp: {
-      type: String,
+    mobilId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Mobil",
       required: true,
-      trim: true,
-      unique: true,
     },
-    status: {
+    activityType: {
       type: String,
-      enum: ["Belum Di Follow Up", "Sudah Di Follow Up"],
-      default: "Belum Di Follow Up",
+      enum: [
+        "view_detail",
+        "beli_cash",
+        "simulasi_kredit",
+        "booking_test_drive",
+      ],
+      required: true,
     },
-    lastActivity: {
-      type: Date,
-      default: Date.now,
-    },
-    // Track total interactions
-    totalInteractions: {
-      type: Number,
-      default: 1,
+    additionalData: {
+      type: Schema.Types.Mixed, // Flexible data for different activity types
+      default: {},
     },
   },
   {
@@ -35,9 +34,11 @@ const PelangganSchema = new Schema(
 );
 
 // Index untuk performa
-PelangganSchema.index({ noHp: 1 });
-PelangganSchema.index({ status: 1 });
-PelangganSchema.index({ lastActivity: -1 });
+ActivityLogSchema.index({ pelangganId: 1 });
+ActivityLogSchema.index({ mobilId: 1 });
+ActivityLogSchema.index({ activityType: 1 });
+ActivityLogSchema.index({ createdAt: -1 });
 
-const Pelanggan = models.Pelanggan || model("Pelanggan", PelangganSchema);
-export default Pelanggan;
+const ActivityLog =
+  models.ActivityLog || model("ActivityLog", ActivityLogSchema);
+export default ActivityLog;

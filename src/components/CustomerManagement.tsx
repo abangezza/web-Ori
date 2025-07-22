@@ -1,14 +1,22 @@
 // src/components/CustomerManagement.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { User, Phone, CheckCircle, Clock, Search, Filter, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import {
+  User,
+  Phone,
+  CheckCircle,
+  Clock,
+  Search,
+  Filter,
+  MessageSquare,
+} from "lucide-react";
 
 interface Customer {
   _id: string;
   nama: string;
   noHp: string;
-  status: 'Belum Di Follow Up' | 'Sudah Di Follow Up';
+  status: "Belum Di Follow Up" | "Sudah Di Follow Up";
   lastActivity: string;
   totalInteractions: number;
   createdAt: string;
@@ -19,11 +27,11 @@ const CustomerManagement = () => {
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
-  const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [broadcastTarget, setBroadcastTarget] = useState('all');
+  const [broadcastMessage, setBroadcastMessage] = useState("");
+  const [broadcastTarget, setBroadcastTarget] = useState("all");
   const [updatingFollowUp, setUpdatingFollowUp] = useState<string | null>(null);
 
   useEffect(() => {
@@ -35,9 +43,9 @@ const CustomerManagement = () => {
       setLoading(true);
       const params = new URLSearchParams({
         page: currentPage.toString(),
-        limit: '15',
+        limit: "15",
         ...(searchTerm && { search: searchTerm }),
-        ...(statusFilter && { status: statusFilter })
+        ...(statusFilter && { status: statusFilter }),
       });
 
       const response = await fetch(`/api/customers?${params}`);
@@ -48,34 +56,36 @@ const CustomerManagement = () => {
         setTotalPages(result.pagination.totalPages);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      console.error("Error fetching customers:", error);
     } finally {
       setLoading(false);
     }
-  export default CustomerManagement;
+  };
 
   const handleFollowUp = async (customerId: string) => {
     try {
       setUpdatingFollowUp(customerId);
       const response = await fetch(`/api/customers/${customerId}/follow-up`, {
-        method: 'PATCH'
+        method: "PATCH",
       });
 
       const result = await response.json();
       if (result.success) {
         // Update local state
-        setCustomers(customers.map(customer => 
-          customer._id === customerId 
-            ? { ...customer, status: 'Sudah Di Follow Up' }
-            : customer
-        ));
-        alert('Customer berhasil di follow up!');
+        setCustomers(
+          customers.map((customer) =>
+            customer._id === customerId
+              ? { ...customer, status: "Sudah Di Follow Up" }
+              : customer
+          )
+        );
+        alert("Customer berhasil di follow up!");
       } else {
-        alert('Gagal update follow up status');
+        alert("Gagal update follow up status");
       }
     } catch (error) {
-      console.error('Error updating follow up:', error);
-      alert('Terjadi kesalahan saat update follow up');
+      console.error("Error updating follow up:", error);
+      alert("Terjadi kesalahan saat update follow up");
     } finally {
       setUpdatingFollowUp(null);
     }
@@ -83,46 +93,48 @@ const CustomerManagement = () => {
 
   const handleBroadcast = async () => {
     if (!broadcastMessage.trim()) {
-      alert('Pesan tidak boleh kosong');
+      alert("Pesan tidak boleh kosong");
       return;
     }
 
     try {
-      const response = await fetch('/api/broadcast', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: broadcastMessage,
-          targetStatus: broadcastTarget
-        })
+          targetStatus: broadcastTarget,
+        }),
       });
 
       const result = await response.json();
       if (result.success) {
-        alert(`Broadcast berhasil dikirim ke ${result.data.totalRecipients} pelanggan!`);
+        alert(
+          `Broadcast berhasil dikirim ke ${result.data.totalRecipients} pelanggan!`
+        );
         setShowBroadcastModal(false);
-        setBroadcastMessage('');
+        setBroadcastMessage("");
       } else {
-        alert('Gagal mengirim broadcast');
+        alert("Gagal mengirim broadcast");
       }
     } catch (error) {
-      console.error('Error sending broadcast:', error);
-      alert('Terjadi kesalahan saat mengirim broadcast');
+      console.error("Error sending broadcast:", error);
+      alert("Terjadi kesalahan saat mengirim broadcast");
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === 'Sudah Di Follow Up') {
+    if (status === "Sudah Di Follow Up") {
       return (
         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <CheckCircle className="w-3 h-3 mr-1" />
@@ -152,8 +164,12 @@ const CustomerManagement = () => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Manajemen Pelanggan</h1>
-            <p className="text-gray-600">Kelola data pelanggan dan status follow up</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Manajemen Pelanggan
+            </h1>
+            <p className="text-gray-600">
+              Kelola data pelanggan dan status follow up
+            </p>
           </div>
           <button
             onClick={() => setShowBroadcastModal(true)}
@@ -228,7 +244,9 @@ const CustomerManagement = () => {
                         </div>
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{customer.nama}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {customer.nama}
+                        </div>
                         <div className="text-sm text-gray-500">
                           Bergabung: {formatDate(customer.createdAt)}
                         </div>
@@ -238,8 +256,11 @@ const CustomerManagement = () => {
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                      <a 
-                        href={`https://wa.me/${customer.noHp.replace(/\D/g, '')}`}
+                      <a
+                        href={`https://wa.me/${customer.noHp.replace(
+                          /\D/g,
+                          ""
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="hover:text-green-600 transition"
@@ -260,14 +281,14 @@ const CustomerManagement = () => {
                     {formatDate(customer.lastActivity)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {customer.status === 'Belum Di Follow Up' ? (
+                    {customer.status === "Belum Di Follow Up" ? (
                       <button
                         onClick={() => handleFollowUp(customer._id)}
                         disabled={updatingFollowUp === customer._id}
                         className={`inline-flex items-center px-3 py-1 border border-transparent text-sm leading-4 font-medium rounded-md transition ${
                           updatingFollowUp === customer._id
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'text-white bg-blue-600 hover:bg-blue-700'
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "text-white bg-blue-600 hover:bg-blue-700"
                         }`}
                       >
                         {updatingFollowUp === customer._id ? (
@@ -283,7 +304,9 @@ const CustomerManagement = () => {
                         )}
                       </button>
                     ) : (
-                      <span className="text-green-600 font-medium">✓ Completed</span>
+                      <span className="text-green-600 font-medium">
+                        ✓ Completed
+                      </span>
                     )}
                   </td>
                 </tr>
@@ -304,7 +327,9 @@ const CustomerManagement = () => {
                 Previous
               </button>
               <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                onClick={() =>
+                  setCurrentPage(Math.min(totalPages, currentPage + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -314,7 +339,8 @@ const CustomerManagement = () => {
             <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm text-gray-700">
-                  Menampilkan halaman <span className="font-medium">{currentPage}</span> dari{' '}
+                  Menampilkan halaman{" "}
+                  <span className="font-medium">{currentPage}</span> dari{" "}
                   <span className="font-medium">{totalPages}</span>
                 </p>
               </div>
@@ -328,7 +354,9 @@ const CustomerManagement = () => {
                     Previous
                   </button>
                   <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    onClick={() =>
+                      setCurrentPage(Math.min(totalPages, currentPage + 1))
+                    }
                     disabled={currentPage === totalPages}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -345,8 +373,10 @@ const CustomerManagement = () => {
       {showBroadcastModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Kirim Broadcast Message</h3>
-            
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Kirim Broadcast Message
+            </h3>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -399,5 +429,3 @@ const CustomerManagement = () => {
 };
 
 export default CustomerManagement;
-
-

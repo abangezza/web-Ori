@@ -54,7 +54,10 @@ export async function saveCustomerActivity(data: CustomerData) {
     return { success: true, pelangganId: pelanggan._id };
   } catch (error) {
     console.error("Error saving customer activity:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 }
 

@@ -136,6 +136,8 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
     setIsSubmitting(true);
 
     try {
+      console.log("Submitting simulasi kredit for:", formData.nama); // Debug log
+
       // Save customer activity via API
       const activityResponse = await fetch("/api/customer-activity", {
         method: "POST",
@@ -155,10 +157,11 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
         }),
       });
 
+      const activityResult = await activityResponse.json();
+      console.log("Activity save result:", activityResult); // Debug log
+
       if (!activityResponse.ok) {
-        console.warn(
-          "Failed to save customer activity, but continuing with WhatsApp..."
-        );
+        console.warn("Failed to save customer activity:", activityResult);
       }
 
       const dpFormatted = parseInt(

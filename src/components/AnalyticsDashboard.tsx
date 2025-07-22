@@ -153,24 +153,35 @@ const AnalyticsDashboard = () => {
         ...(selectedMonth && { month: selectedMonth.toString() }),
       });
 
-      const response = await fetch(`/api/analytics/pdf-report?${params}`, {
-        method: "GET",
-      });
+      // Open the HTML report in a new window for PDF printing
+      const reportUrl = `/api/analytics/pdf-report?${params}`;
+      const newWindow = window.open(reportUrl, "_blank");
 
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `analytics-report-${selectedYear}${
-          selectedMonth ? `-${selectedMonth}` : ""
-        }.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+      if (newWindow) {
+        // Wait for the page to load, then trigger print
+        newWindow.onload = () => {
+          setTimeout(() => {
+            newWindow.print();
+          }, 1000);
+        };
       } else {
-        alert("Gagal generate PDF report");
+        // Fallback: direct download
+        const response = await fetch(reportUrl);
+        if (response.ok) {
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `analytics-report-${selectedYear}${
+            selectedMonth ? `-${selectedMonth}` : ""
+          }.html`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } else {
+          alert("Gagal generate PDF report");
+        }
       }
     } catch (error) {
       console.error("Error generating PDF:", error);

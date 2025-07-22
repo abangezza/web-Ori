@@ -1,9 +1,9 @@
 // src/app/api/analytics/mobil/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import {
   getMobilAnalytics,
   getTopMobilsByActivity,
 } from "@/lib/customerService";
-import { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {

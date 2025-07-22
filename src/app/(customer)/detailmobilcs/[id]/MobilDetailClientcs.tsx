@@ -27,7 +27,9 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
   useEffect(() => {
     const trackView = async () => {
       try {
-        await fetch("/api/analytics/track-view", {
+        console.log("Tracking view for mobil:", data._id); // Debug log
+
+        const response = await fetch("/api/analytics/track-view", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -37,6 +39,13 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
             timestamp: new Date().toISOString(),
           }),
         });
+
+        const result = await response.json();
+        console.log("Track view result:", result); // Debug log
+
+        if (!response.ok) {
+          console.error("Failed to track view:", result);
+        }
       } catch (error) {
         console.error("Error tracking view:", error);
       }

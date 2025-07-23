@@ -9,7 +9,6 @@ import SimulasiKreditForm from "@/components/forms/SimulasiKreditForm";
 import BeliCashForm from "@/components/forms/BeliCashForm";
 import TestDriveBookingForm from "@/components/forms/TestDriveBookingForm";
 import Image from "next/image";
-// Remove the import since we'll use API endpoint instead
 
 interface MobilDetailClientProps {
   data: MobilType;
@@ -19,7 +18,7 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
   const router = useRouter();
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0); // Changed from selectedImage to index
 
   // Check if mobil is sold out
   const isSoldOut = data.status === "terjual";
@@ -82,14 +81,42 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
     return `${hari}-${bulan}-${tahun}`;
   };
 
-  const openImageModal = (imageSrc: string) => {
-    setSelectedImage(imageSrc);
+  // Updated image modal functions
+  const openImageModal = (imageIndex: number) => {
+    setSelectedImageIndex(imageIndex);
     setShowImageModal(true);
   };
 
   const closeImageModal = () => {
     setShowImageModal(false);
-    setSelectedImage("");
+    setSelectedImageIndex(0);
+  };
+
+  const goToNextImage = () => {
+    if (data.fotos && data.fotos.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === data.fotos.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const goToPreviousImage = () => {
+    if (data.fotos && data.fotos.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === 0 ? data.fotos.length - 1 : prev - 1
+      );
+    }
+  };
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") {
+      goToNextImage();
+    } else if (e.key === "ArrowLeft") {
+      goToPreviousImage();
+    } else if (e.key === "Escape") {
+      closeImageModal();
+    }
   };
 
   const openDescriptionModal = () => {
@@ -207,7 +234,7 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
               <div
                 key={i}
                 className="accordion-item"
-                onClick={() => openImageModal(`/api/uploads/${foto}`)}
+                onClick={() => openImageModal(i)}
               >
                 <Image
                   src={`/api/uploads/${foto}`}
@@ -628,13 +655,18 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
         )}
       </div>
 
-      {/* Image Modal */}
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
+      {/* Enhanced Image Modal with Navigation */}
+      {showImageModal && data.fotos && data.fotos.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-95 flex items-center justify-center z-50"
+          onKeyDown={handleKeyDown}
+          tabIndex={0}
+        >
           <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close Button */}
             <button
               onClick={closeImageModal}
-              className="absolute top-4 right-4 z-10 bg-white hover:bg-gray-100 text-gray-800 rounded-full p-3 transition-all duration-200 shadow-lg border-2 border-gray-200"
+              className="absolute top-4 right-4 z-20 bg-white hover:bg-gray-100 text-gray-800 rounded-full p-3 transition-all duration-200 shadow-lg border-2 border-gray-200"
             >
               <svg
                 className="w-6 h-6"
@@ -651,17 +683,63 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
               </svg>
             </button>
 
+            {/* Back Button */}
             <button
               onClick={closeImageModal}
-              className="absolute top-4 left-4 z-10 bg-black bg-opacity-60 hover:bg-opacity-80 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
+              className="absolute top-4 left-4 z-20 bg-black bg-opacity-60 hover:bg-opacity-80 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
             >
               ← Kembali
             </button>
 
+            {/* Previous Button */}
+            {data.fotos.length > 1 && (
+              <button
+                onClick={goToPreviousImage}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-full p-3 transition-all duration-200 shadow-lg"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 19l-7-7 7-7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Next Button */}
+            {data.fotos.length > 1 && (
+              <button
+                onClick={goToNextImage}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 bg-black bg-opacity-60 hover:bg-opacity-80 text-white rounded-full p-3 transition-all duration-200 shadow-lg"
+              >
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Main Image */}
             <div className="relative max-w-full max-h-full">
               <Image
-                src={selectedImage}
-                alt="Foto Mobil"
+                src={`/api/uploads/${data.fotos[selectedImageIndex]}`}
+                alt={`Foto Mobil ${selectedImageIndex + 1}`}
                 width={1500}
                 height={1200}
                 className="max-w-full max-h-full object-contain"
@@ -670,29 +748,46 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
               />
             </div>
 
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-              {data.fotos &&
-                data.fotos.map((foto, i) => (
+            {/* Image Counter */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20 bg-black bg-opacity-60 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              {selectedImageIndex + 1} / {data.fotos.length}
+            </div>
+
+            {/* Thumbnail Navigation */}
+            {data.fotos.length > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 max-w-[80%] overflow-x-auto scrollbar-hide">
+                {data.fotos.map((foto, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelectedImage(`/api/uploads/${foto}`)}
-                    className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                      selectedImage === `/api/uploads/${foto}`
-                        ? "bg-white"
-                        : "bg-white bg-opacity-50 hover:bg-opacity-75"
+                    onClick={() => setSelectedImageIndex(i)}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      selectedImageIndex === i
+                        ? "border-white shadow-lg"
+                        : "border-white border-opacity-50 hover:border-opacity-75"
                     }`}
-                  />
+                  >
+                    <Image
+                      src={`/api/uploads/${foto}`}
+                      alt={`Thumbnail ${i + 1}`}
+                      width={64}
+                      height={64}
+                      className="w-full h-full object-cover"
+                      unoptimized
+                    />
+                  </button>
                 ))}
-            </div>
+              </div>
+            )}
 
-            <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-3 py-2 rounded-lg text-sm font-medium">
-              {data.fotos
-                ? data.fotos.indexOf(selectedImage.replace("/uploads/", "")) + 1
-                : 1}{" "}
-              / {data.fotos ? data.fotos.length : 0}
-            </div>
+            {/* Keyboard Hints */}
+            {data.fotos.length > 1 && (
+              <div className="absolute bottom-4 right-4 z-20 bg-black bg-opacity-60 text-white px-3 py-2 rounded-lg text-xs">
+                ← → untuk navigasi • ESC untuk tutup
+              </div>
+            )}
           </div>
 
+          {/* Background Overlay */}
           <div className="absolute inset-0 -z-10" onClick={closeImageModal} />
         </div>
       )}

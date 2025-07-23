@@ -194,31 +194,36 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
 
         {/* Center - Main Car Info in Overlay */}
         <div className="flex-1 flex justify-center items-center relative">
-          {/* Car Info Card - Positioned over the car image */}
-          <div className="absolute top-20 bg-gray-800 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 max-w-sm w-full mx-4 mt-20 mr-79">
-            {/* Car Title */}
-            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3 text-center">
-              {`${mobil.merek} ${mobil.tipe}`.toUpperCase()}
-            </h1>
+          <div className="absolute top-20 max-w-sm w-full mx-4 mr-80">
+            {/* Layer transparan background */}
+            <div className="absolute inset-0 bg-gray-800 opacity-40 backdrop-blur-sm rounded-xl z-0"></div>
 
-            {/* Description */}
-            {mobil.deskripsi && (
-              <p className="text-white text-sm mb-4 leading-relaxed opacity-90 text-center">
-                {truncateDescription(mobil.deskripsi)}
-              </p>
-            )}
+            {/* Isi Card */}
+            <div className="relative z-10 rounded-xl p-6 text-nop">
+              {/* Car Title */}
+              <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3 text-center">
+                {`${mobil.merek} ${mobil.tipe}`.toUpperCase()}
+              </h1>
 
-            {/* Price */}
-            <div className="text-orange-400 text-xl lg:text-2xl font-bold mb-4 text-center">
-              Rp.{formatHarga(mobil.harga)}
+              {/* Description */}
+              {mobil.deskripsi && (
+                <p className="text-white text-sm mb-4 leading-relaxed opacity-90 text-center">
+                  {truncateDescription(mobil.deskripsi)}
+                </p>
+              )}
+
+              {/* Price */}
+              <div className="text-orange-400 text-xl lg:text-2xl font-bold mb-4 text-center">
+                Rp.{formatHarga(mobil.harga)}
+              </div>
+
+              {/* Button */}
+              <Link href={`/detailmobilcs/${mobil._id}`}>
+                <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
+                  Lihat Detail
+                </button>
+              </Link>
             </div>
-
-            {/* Button */}
-            <Link href={`/detailmobilcs/${mobil._id}`}>
-              <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
-                Lihat Detail
-              </button>
-            </Link>
           </div>
         </div>
 

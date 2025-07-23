@@ -1,27 +1,31 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import { getToken } from 'next-auth/jwt'
+// src/middleware.ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-// Daftar halaman yang butuh login
-const protectedRoutes = ['/dashboard']
+const protectedRoutes = ["/dashboard"];
 
 export async function middleware(req: NextRequest) {
-  const token = await getToken({ req })
+  const token = await getToken({
+    req,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
 
-  const { pathname } = req.nextUrl
+  const { pathname } = req.nextUrl;
 
-  // Cek kalau user akses route yang butuh login
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
+  console.log("Middleware - Path:", pathname, "Token:", !!token); // Debug log
+
+  if (protectedRoutes.some((route) => pathname.startsWith(route))) {
     if (!token) {
-      // Redirect ke login kalau belum login
-      const loginUrl = new URL('/login', req.url)
-      return NextResponse.redirect(loginUrl)
+      console.log("No token, redirecting to login"); // Debug log
+      const loginUrl = new URL("/login", req.url);
+      return NextResponse.redirect(loginUrl);
     }
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'], // Proteksi semua URL di /dashboard
-}
+  matcher: ["/dashboard/:path*"],
+};

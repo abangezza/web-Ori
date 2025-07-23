@@ -26,10 +26,11 @@ export default function MobilCard({ mobil }: MobilCardProps) {
     }
   };
 
-  // Get main photo or fallback
+  /// Get main photo or fallback
   const getMainPhoto = () => {
     if (mobil.fotos && mobil.fotos.length > 0) {
-      return `/uploads/${mobil.fotos[0]}`;
+      // ✅ Gunakan API route untuk serve images
+      return `/api/uploads/${mobil.fotos[0]}`;
     }
     return "/lambang 1.png"; // fallback image
   };

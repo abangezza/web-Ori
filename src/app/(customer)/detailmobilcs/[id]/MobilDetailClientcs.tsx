@@ -207,16 +207,19 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
               <div
                 key={i}
                 className="accordion-item"
-                onClick={() => openImageModal(`/uploads/${foto}`)}
+                onClick={() => openImageModal(`/api/uploads/${foto}`)}
               >
                 <Image
-                  src={`/uploads/${foto}`}
+                  src={`/api/uploads/${foto}`}
                   alt={`Foto ${i + 1}`}
                   fill
                   className="object-cover"
                   unoptimized
                   onError={() =>
-                    console.error("Error loading image:", `/uploads/${foto}`)
+                    console.error(
+                      "Error loading image:",
+                      `/api/uploads/${foto}`
+                    )
                   }
                 />
 
@@ -672,9 +675,9 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
                 data.fotos.map((foto, i) => (
                   <button
                     key={i}
-                    onClick={() => setSelectedImage(`/uploads/${foto}`)}
+                    onClick={() => setSelectedImage(`/api/uploads/${foto}`)}
                     className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                      selectedImage === `/uploads/${foto}`
+                      selectedImage === `/api/uploads/${foto}`
                         ? "bg-white"
                         : "bg-white bg-opacity-50 hover:bg-opacity-75"
                     }`}

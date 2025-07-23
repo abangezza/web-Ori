@@ -1,4 +1,4 @@
-// 1. /src/lib/authOptions.ts
+// src/lib/authOptions.ts
 import CredentialsProvider from "next-auth/providers/credentials";
 import User from "@/models/User";
 import connectMongo from "@/lib/conn";
@@ -17,19 +17,27 @@ export const authOptions: AuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        await connectMongo();
-        const user = await User.findOne({ username: credentials?.username });
+        try {
+          await connectMongo();
+          const user = await User.findOne({ username: credentials?.username });
 
-        if (!user) return null;
+          if (!user) return null;
 
-        const isValid = await bcrypt.compare(credentials!.password, user.password);
-        if (!isValid) return null;
+          const isValid = await bcrypt.compare(
+            credentials!.password,
+            user.password
+          );
+          if (!isValid) return null;
 
-        return {
-          id: user._id.toString(),
-          name: user.username,
-          role: user.role,
-        };
+          return {
+            id: user._id.toString(),
+            name: user.username,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Auth error:", error);
+          return null;
+        }
       },
     }),
   ],
@@ -46,9 +54,19 @@ export const authOptions: AuthOptions = {
       session.user.role = token.role;
       return session;
     },
+    // ✅ PENTING: Redirect callback
+    async redirect({ url, baseUrl }) {
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/dashboard`;
+    },
   },
   pages: {
     signIn: "/login",
   },
   secret: process.env.NEXTAUTH_SECRET,
+  // ✅ PENTING: Debug untuk production
+  debug: process.env.NODE_ENV === "development",
 };

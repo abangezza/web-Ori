@@ -72,8 +72,8 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
 
   // Handle form changes
   const handleInputChange = (field: string, value: string) => {
-    let newErrors = { ...errors };
-    let updatedFormData = { ...formData, [field]: value };
+    const newErrors = { ...errors };
+    const updatedFormData = { ...formData, [field]: value };
 
     delete newErrors[field];
 

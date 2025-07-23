@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from 'mongoose';
+import mongoose, { Schema, models } from "mongoose";
 
 const MobilSchema = new Schema({
   merek: String,
@@ -23,12 +23,12 @@ const MobilSchema = new Schema({
   harga: Number,
   status: {
     type: String,
-    enum: ['tersedia', 'terjual'],
-    default: 'tersedia',
+    enum: ["tersedia", "terjual"],
+    default: "tersedia",
   },
   deskripsi: String,
 });
 
-const Mobil = models.Mobil || mongoose.model('Mobil', MobilSchema);
+const Mobil = models.Mobil || mongoose.model("Mobil", MobilSchema);
 
 export default Mobil;

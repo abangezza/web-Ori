@@ -2,6 +2,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 
 interface MobileWelcomeSectionProps {
   mobilCount: number;
@@ -30,7 +31,7 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
         {/* Logo/Brand */}
         <div className="mb-8">
           <div className="bg-black rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-2xl">
-            <img
+            <Image
               src="/lambang bulat.png"
               alt="Radja Auto Car"
               className="w-12 h-12"

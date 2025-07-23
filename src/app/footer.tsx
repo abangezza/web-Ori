@@ -6,7 +6,6 @@ import {
   Car,
   Percent,
   Scale,
-  whatsapp,
   Facebook,
   Linkedin,
   Twitter,

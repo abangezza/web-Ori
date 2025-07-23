@@ -1,5 +1,5 @@
 // src/models/Pelanggan.ts
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const PelangganSchema = new Schema(
   {

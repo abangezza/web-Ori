@@ -23,6 +23,7 @@ export default async function Page({ params, searchParams }: PageProps) {
   const slug = params.slug || [];
   const currentPage = parseInt(searchParams.page || "1");
   const itemsPerPage = 8;
+  const skip = (currentPage - 1) * itemsPerPage;
 
   let allMobils: MobilType[] = [];
   let pageTitle = "Semua Mobil";
@@ -171,7 +172,7 @@ export default async function Page({ params, searchParams }: PageProps) {
 
   return (
     <div className="w-full min-h-screen bg-gray-50 flex justify-center">
-      <div className="w-full max-w-[1920px] px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Header - Selalu di tengah */}
         <div className="text-center mb-8 pt-20">
           <h1 className="text-3xl font-bold mb-2">{pageTitle}</h1>
@@ -216,11 +217,11 @@ export default async function Page({ params, searchParams }: PageProps) {
           </div>
         )}
 
-        {/* Grid Cards - Terpusat dengan ukuran max tetap */}
+        {/* Grid Cards - 4 kolom untuk laptop 14 inch */}
         {currentMobils.length > 0 ? (
           <>
             <div className="flex justify-center mb-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8 justify-items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 justify-items-center max-w-7xl">
                 {currentMobils.map((mobil) => (
                   <MobilCard key={mobil._id} mobil={mobil} />
                 ))}

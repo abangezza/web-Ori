@@ -22,13 +22,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
-  const disableNavbar = pathname.startsWith("/dashboard") || pathname === "/login";
+  const disableNavbar =
+    pathname.startsWith("/dashboard") || pathname === "/login";
 
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         {!disableNavbar && <Navbar />}
-        {children}
+
+        {/* Main content wrapper with max width */}
+        <main className="w-full">{children}</main>
+
         {!disableNavbar && <Footer />}
       </body>
     </html>

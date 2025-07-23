@@ -42,26 +42,24 @@ export default function Navbar() {
           : "bg-white shadow-md" // Always white background on non-home pages
       }`}
     >
-      <div className="mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-20 items-center justify-between">
-          {/* Kiri: Logo dan nama brand - Fixed positioning */}
-          <div
-            className="flex items-center flex-shrink-0"
-            style={{ marginLeft: "120px" }}
-          >
-            <div className="relative mr-4">
+      {/* Max width container to center content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo dan Brand */}
+          <div className="flex items-center flex-shrink-0">
+            <div className="relative mr-3">
               {/* Background hitam bulat untuk logo */}
               <div
                 className="bg-black rounded-full flex items-center justify-center"
-                style={{ width: "48px", height: "48px" }}
+                style={{ width: "40px", height: "40px" }}
               >
                 <Image
                   className="relative z-10"
                   src="/lambang bulat.png"
                   alt="Radja Auto Car"
-                  width={32}
-                  height={32}
-                  style={{ width: "32px", height: "32px" }}
+                  width={24}
+                  height={24}
+                  style={{ width: "24px", height: "24px" }}
                 />
               </div>
             </div>
@@ -75,7 +73,7 @@ export default function Navbar() {
               }`}
               style={{
                 fontFamily: 'Georgia, "Times New Roman", serif',
-                fontSize: "24px",
+                fontSize: "18px",
                 letterSpacing: "0.5px",
               }}
             >
@@ -83,43 +81,38 @@ export default function Navbar() {
             </span>
           </div>
 
-          {/* Tengah: Menu Navigation - Fixed positioning */}
-          <div className="absolute left-1/2 transform -translate-x-1/2">
-            <div
-              className="hidden md:flex items-center"
-              style={{ gap: "32px" }}
-            >
-              {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`font-bold transition-colors duration-300 ${
-                    pathname === item.href
-                      ? isHomePage
-                        ? isScrolled
-                          ? "text-orange-600 font-semibold"
-                          : "text-orange-400 font-semibold drop-shadow-lg"
-                        : "text-orange-600 font-semibold" // Always orange for active on non-home
-                      : isHomePage
+          {/* Navigation Menu - Desktop */}
+          <div className="hidden lg:flex items-center space-x-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`font-medium transition-colors duration-300 ${
+                  pathname === item.href
+                    ? isHomePage
                       ? isScrolled
-                        ? "text-gray-700 hover:text-orange-600"
-                        : "text-white hover:text-orange-300 drop-shadow-lg"
-                      : "text-gray-700 hover:text-orange-600" // Always dark text on non-home
-                  }`}
-                  style={{
-                    padding: "12px",
-                    fontSize: "16px",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
+                        ? "text-orange-600 font-semibold"
+                        : "text-orange-400 font-semibold drop-shadow-lg"
+                      : "text-orange-600 font-semibold" // Always orange for active on non-home
+                    : isHomePage
+                    ? isScrolled
+                      ? "text-gray-700 hover:text-orange-600"
+                      : "text-white hover:text-orange-300 drop-shadow-lg"
+                    : "text-gray-700 hover:text-orange-600" // Always dark text on non-home
+                }`}
+                style={{
+                  padding: "8px 12px",
+                  fontSize: "14px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.name}
+              </Link>
+            ))}
           </div>
 
-          {/* Kanan: Mobile Menu Button */}
-          <div className="md:hidden">
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden">
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -173,38 +166,40 @@ export default function Navbar() {
 
       {/* Mobile Menu - Conditional rendering */}
       {isMobileMenuOpen && (
-        <div className="md:hidden" id="mobile-menu">
-          <div
-            className={`px-2 pt-2 pb-3 space-y-1 ${
-              isHomePage
-                ? isScrolled
-                  ? "bg-white shadow-lg"
-                  : "bg-black bg-opacity-80 backdrop-blur-sm"
-                : "bg-white shadow-lg" // Always white background on non-home pages
-            }`}
-          >
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setIsMobileMenuOpen(false)} // Tutup menu saat item diklik
-                className={`block px-3 py-2 text-base font-medium transition-colors duration-300 ${
-                  pathname === item.href
-                    ? isHomePage
+        <div className="lg:hidden" id="mobile-menu">
+          <div className="max-w-7xl mx-auto">
+            <div
+              className={`px-2 pt-2 pb-3 space-y-1 ${
+                isHomePage
+                  ? isScrolled
+                    ? "bg-white shadow-lg"
+                    : "bg-black bg-opacity-80 backdrop-blur-sm"
+                  : "bg-white shadow-lg" // Always white background on non-home pages
+              }`}
+            >
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)} // Tutup menu saat item diklik
+                  className={`block px-3 py-2 text-base font-medium transition-colors duration-300 ${
+                    pathname === item.href
+                      ? isHomePage
+                        ? isScrolled
+                          ? "text-orange-600 font-semibold bg-orange-50"
+                          : "text-orange-400 font-semibold bg-white bg-opacity-10"
+                        : "text-orange-600 font-semibold bg-orange-50" // Always orange active on non-home
+                      : isHomePage
                       ? isScrolled
-                        ? "text-orange-600 font-semibold bg-orange-50"
-                        : "text-orange-400 font-semibold bg-white bg-opacity-10"
-                      : "text-orange-600 font-semibold bg-orange-50" // Always orange active on non-home
-                    : isHomePage
-                    ? isScrolled
-                      ? "text-gray-700 hover:text-orange-600 hover:bg-gray-50"
-                      : "text-white hover:text-orange-300 hover:bg-white hover:bg-opacity-10"
-                    : "text-gray-700 hover:text-orange-600 hover:bg-gray-50" // Always dark on non-home
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+                        ? "text-gray-700 hover:text-orange-600 hover:bg-gray-50"
+                        : "text-white hover:text-orange-300 hover:bg-white hover:bg-opacity-10"
+                      : "text-gray-700 hover:text-orange-600 hover:bg-gray-50" // Always dark on non-home
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       )}

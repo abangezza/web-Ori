@@ -60,7 +60,6 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
   // Get main photo or fallback
   const getMainPhoto = () => {
     if (mobil.fotos && mobil.fotos.length > 0) {
-      // ✅ Gunakan API route untuk serve images
       return `/api/uploads/${mobil.fotos[0]}`;
     }
     return "/lambang 1.png"; // fallback image
@@ -94,7 +93,7 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
   };
 
   // Truncate description if too long
-  const truncateDescription = (text: string, maxLength: number = 150) => {
+  const truncateDescription = (text: string, maxLength: number = 100) => {
     if (!text) return "";
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + "...";
@@ -127,66 +126,66 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
         }}
       />
 
-      {/* Content Container */}
-      <div className="relative z-10 h-full flex">
+      {/* Content Container - Centered with max width */}
+      <div className="relative z-10 h-full max-w-7xl mx-auto flex px-4">
         {/* Left Side - Car Info Cards */}
         <div className="flex-1 flex flex-col justify-center py-6">
-          <div className="space-y-4 ml-40">
+          <div className="space-y-3 ml-8 lg:ml-16">
             {/* Transmission */}
-            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-xl p-4 w-36 hover:bg-opacity-30 transition-all duration-300">
-              <div className="flex items-center mb-2">
-                <GiGearStickPattern className="w-12 h-8 text-gray-300 mr-2" />
+            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-lg p-3 w-32 hover:bg-opacity-30 transition-all duration-300">
+              <div className="flex items-center mb-1">
+                <GiGearStickPattern className="w-6 h-6 text-gray-300 mr-2" />
               </div>
-              <span className="text-gray-300 text-sm font-medium">
+              <span className="text-gray-300 text-xs font-medium">
                 Transmisi
               </span>
-              <div className="text-white font-bold text-lg">
+              <div className="text-white font-bold text-sm">
                 {mobil.transmisi}
               </div>
             </div>
 
             {/* Mileage */}
-            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-xl p-4 w-36 hover:bg-opacity-30 transition-all duration-300">
-              <div className="flex items-center mb-2">
-                <IoSpeedometerOutline className="w-12 h-8 text-gray-300 mr-2" />
+            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-lg p-3 w-32 hover:bg-opacity-30 transition-all duration-300">
+              <div className="flex items-center mb-1">
+                <IoSpeedometerOutline className="w-6 h-6 text-gray-300 mr-2" />
               </div>
-              <span className="text-gray-300 text-sm font-medium">
+              <span className="text-gray-300 text-xs font-medium">
                 Kilometer
               </span>
-              <div className="text-white font-bold text-lg">
-                {mobil.kilometer} KM
+              <div className="text-white font-bold text-sm">
+                {mobil.kilometer}
               </div>
             </div>
 
             {/* Year */}
-            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-xl p-4 w-36 hover:bg-opacity-30 transition-all duration-300">
-              <div className="flex items-center mb-2">
-                <HiMiniWrenchScrewdriver className="w-12 h-8 text-gray-300 mr-2" />
+            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-lg p-3 w-32 hover:bg-opacity-30 transition-all duration-300">
+              <div className="flex items-center mb-1">
+                <HiMiniWrenchScrewdriver className="w-6 h-6 text-gray-300 mr-2" />
               </div>
-              <span className="text-gray-300 text-sm font-medium">Tahun</span>
-              <div className="text-white font-bold text-lg">{mobil.tahun}</div>
+              <span className="text-gray-300 text-xs font-medium">Tahun</span>
+              <div className="text-white font-bold text-sm">{mobil.tahun}</div>
             </div>
 
             {/* Fuel */}
-            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-xl p-4 w-36 hover:bg-opacity-30 transition-all duration-300">
-              <div className="flex items-center mb-2">
-                <BsFuelPumpDieselFill className="w-12 h-8 text-gray-300 mr-2" />
+            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-lg p-3 w-32 hover:bg-opacity-30 transition-all duration-300">
+              <div className="flex items-center mb-1">
+                <BsFuelPumpDieselFill className="w-6 h-6 text-gray-300 mr-2" />
               </div>
-              <span className="text-gray-300 text-sm font-medium">
+              <span className="text-gray-300 text-xs font-medium">
                 Bahan Bakar
               </span>
-              <div className="text-white font-bold text-lg">
+              <div className="text-white font-bold text-sm">
                 {mobil.bahan_bakar}
               </div>
             </div>
 
             {/* Tax Expiry */}
-            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-xl p-4 w-36 hover:bg-opacity-30 transition-all duration-300">
-              <div className="flex items-center mb-2">
-                <PiCalendar className="w-12 h-8 text-gray-300 mr-2" />
+            <div className="bg-slate-900 opacity-70 bg-opacity-20 backdrop-blur-sm rounded-lg p-3 w-32 hover:bg-opacity-30 transition-all duration-300">
+              <div className="flex items-center mb-1">
+                <PiCalendar className="w-6 h-6 text-gray-300 mr-2" />
               </div>
-              <span className="text-gray-300 text-sm font-medium">Pajak</span>
-              <div className="text-white font-bold text-lg">
+              <span className="text-gray-300 text-xs font-medium">Pajak</span>
+              <div className="text-white font-bold text-sm">
                 {formatTanggalPajak(mobil.pajak)}
               </div>
             </div>
@@ -194,51 +193,47 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
         </div>
 
         {/* Center - Main Content */}
-        <div className="flex-1 flex flex-col h-70 mt-45 mr-96">
+        <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
           {/* Car Title */}
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2 whitespace-nowrap overflow-hidden text-ellipsis">
+          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2 max-w-md">
             {`${mobil.merek} ${mobil.tipe}`.toUpperCase()}
           </h1>
 
           {/* Description */}
           {mobil.deskripsi && (
-            <p className="text-white text-sm md:text-base mb-3 max-w-md leading-relaxed opacity-90 bg-[rgba(15,23,42,0.5)]">
+            <p className="text-white text-sm mb-3 max-w-sm leading-relaxed opacity-90 bg-black bg-opacity-30 p-2 rounded">
               {truncateDescription(mobil.deskripsi)}
             </p>
           )}
 
           {/* Price */}
-          <div className="text-orange-400 text-2xl md:text-3xl font-bold mb-3">
+          <div className="text-orange-400 text-xl lg:text-2xl font-bold mb-3">
             Rp.{formatHarga(mobil.harga)}
           </div>
 
           {/* Button */}
           <Link href={`/detailmobilcs/${mobil._id}`}>
-            <button className="bg-white text-gray-800 px-8 py-3 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
+            <button className="bg-white text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
               Lihat Detail
             </button>
           </Link>
         </div>
 
-        {/* Right Side - Car Image */}
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="relative w-full h-full max-w-sm">
-            <div className=""></div>
-          </div>
-        </div>
+        {/* Right Side - Empty space for balance */}
+        <div className="flex-1"></div>
       </div>
 
       {/* Integrated Search Filter - Positioned at bottom center */}
       {showFilter && (
-        <div className="absolute bottom-17 left-1/2 transform -translate-x-1/2 z-20">
-          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 px-8 py-5 w-screen max-w-[50vw]">
-            <div className="flex items-center gap-6 justify-center">
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 w-full max-w-4xl px-4">
+          <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-xl shadow-xl border border-gray-200 px-4 py-3">
+            <div className="flex items-center justify-center gap-3 flex-wrap lg:flex-nowrap">
               {/* Merek Dropdown */}
-              <div className="relative flex-1 max-w-40">
+              <div className="relative flex-1 min-w-32">
                 <select
                   value={filters.merek}
                   onChange={(e) => handleFilterChange("merek", e.target.value)}
-                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-base font-medium cursor-pointer pr-8 pl-3 py-2 w-full"
+                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-sm font-medium cursor-pointer pr-6 pl-2 py-2 w-full"
                 >
                   <option value="all">Merek</option>
                   {merekOptions.map((merek) => (
@@ -248,7 +243,7 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
                   ))}
                 </select>
                 <svg
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -263,16 +258,16 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
               </div>
 
               {/* Separator */}
-              <div className="w-px h-8 bg-gray-300"></div>
+              <div className="hidden lg:block w-px h-6 bg-gray-300"></div>
 
               {/* Transmisi Dropdown */}
-              <div className="relative flex-1 max-w-40">
+              <div className="relative flex-1 min-w-32">
                 <select
                   value={filters.transmisi}
                   onChange={(e) =>
                     handleFilterChange("transmisi", e.target.value)
                   }
-                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-base font-medium cursor-pointer pr-8 pl-3 py-2 w-full"
+                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-sm font-medium cursor-pointer pr-6 pl-2 py-2 w-full"
                 >
                   <option value="all">Transmisi</option>
                   {transmisiOptions.map((transmisi) => (
@@ -282,7 +277,7 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
                   ))}
                 </select>
                 <svg
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -297,14 +292,14 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
               </div>
 
               {/* Separator */}
-              <div className="w-px h-8 bg-gray-300"></div>
+              <div className="hidden lg:block w-px h-6 bg-gray-300"></div>
 
               {/* Tahun Dropdown */}
-              <div className="relative flex-1 max-w-32">
+              <div className="relative flex-1 min-w-24">
                 <select
                   value={filters.tahun}
                   onChange={(e) => handleFilterChange("tahun", e.target.value)}
-                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-base font-medium cursor-pointer pr-8 pl-3 py-2 w-full"
+                  className="appearance-none bg-transparent border-none focus:outline-none text-gray-700 text-sm font-medium cursor-pointer pr-6 pl-2 py-2 w-full"
                 >
                   <option value="all">Tahun</option>
                   {tahunOptions.map((tahun) => (
@@ -314,7 +309,7 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
                   ))}
                 </select>
                 <svg
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -331,10 +326,10 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
               {/* Search Button */}
               <button
                 onClick={handleSearch}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200 flex items-center gap-3 text-base whitespace-nowrap"
+                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 flex items-center gap-2 text-sm whitespace-nowrap"
               >
                 <svg
-                  className="w-5 h-5"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -360,13 +355,13 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
             onClick={onPrevious}
             className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-gray-600 bg-opacity-70 backdrop-blur-sm rounded-full p-3 hover:bg-opacity-30 transition-all duration-200 hover:scale-110"
           >
-            <ChevronLeft className="w-6 h-6 text-black" />
+            <ChevronLeft className="w-6 h-6 text-white" />
           </button>
           <button
             onClick={onNext}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-gray-600 bg-opacity-70 backdrop-blur-sm rounded-full p-3 hover:bg-opacity-30 transition-all duration-200 hover:scale-110"
           >
-            <ChevronRight className="w-6 h-6 text-black" />
+            <ChevronRight className="w-6 h-6 text-white" />
           </button>
         </>
       )}

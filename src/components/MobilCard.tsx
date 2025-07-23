@@ -63,9 +63,9 @@ export default function MobilCard({ mobil }: MobilCardProps) {
   };
 
   return (
-    <div className="w-full bg-zinc-300 border border-orange-400 rounded-2xl overflow-hidden drop-shadow-lg hover:scale-105 transition duration-300 ease-in-out shadow-lg hover:shadow-2xl shadow-gray-400/100 hover:shadow-orange-500">
-      {/* Gambar - Responsive Height */}
-      <div className="relative w-full h-48 md:h-64">
+    <div className="w-full max-w-xs bg-zinc-300 border border-orange-400 rounded-2xl overflow-hidden drop-shadow-lg hover:scale-105 transition duration-300 ease-in-out shadow-lg hover:shadow-2xl shadow-gray-400/100 hover:shadow-orange-500">
+      {/* Gambar - Fixed Height */}
+      <div className="relative w-full h-44">
         <Image
           src={getMainPhoto()}
           alt={`${mobil.merek} ${mobil.tipe}`}
@@ -73,57 +73,51 @@ export default function MobilCard({ mobil }: MobilCardProps) {
           className="object-cover"
         />
 
-        {/* Status dan Tahun Badges - Responsive Size */}
-        <div className="absolute top-2 left-2 flex gap-1 md:gap-2">
+        {/* Status dan Tahun Badges */}
+        <div className="absolute top-2 left-2 flex gap-1">
           <span
             className={`${getStatusColor(
               mobil.status
-            )} text-white text-xs md:text-sm font-bold px-2 py-1 md:px-4 md:py-2 rounded-full capitalize`}
+            )} text-white text-xs font-bold px-2 py-1 rounded-full capitalize`}
           >
             {mobil.status}
           </span>
-          <span className="bg-orange-600 text-white text-xs md:text-sm font-bold px-2 py-1 md:px-4 md:py-2 rounded-full">
+          <span className="bg-orange-600 text-white text-xs font-bold px-2 py-1 rounded-full">
             {mobil.tahun}
           </span>
         </div>
       </div>
 
-      {/* Content - Responsive Padding */}
-      <div className="p-3 md:p-5">
-        {/* Merek - Responsive Text Size */}
-        <h3 className="text-orange-800 text-lg md:text-2xl font-serif font-semibold">
+      {/* Content - Compact Padding */}
+      <div className="p-3">
+        {/* Merek */}
+        <h3 className="text-orange-800 text-lg font-serif font-semibold">
           {mobil.merek}
         </h3>
 
-        {/* Tipe dan Transmisi - Responsive */}
-        <h2 className="text-lg md:text-2xl font-medium truncate text-gray-800">
+        {/* Tipe dan Transmisi */}
+        <h2 className="text-lg font-medium truncate text-gray-800">
           {mobil.tipe} • {mobil.transmisi}
         </h2>
 
-        {/* Spesifikasi - Mobile Compact Version */}
-        <div className="mt-3 md:mt-4 text-gray-800 font-semibold">
-          {/* Mobile: Stack vertically, Desktop: Horizontal */}
-          <div className="flex flex-col gap-1 md:flex-row md:flex-wrap md:gap-4 text-sm md:text-base">
+        {/* Spesifikasi - Compact Version */}
+        <div className="mt-2 text-gray-800 font-semibold">
+          <div className="flex flex-col gap-1 text-sm">
             <span>🚗 {mobil.kilometer}</span>
             <span>⛽ {mobil.bahan_bakar}</span>
-            <span className="md:hidden">
-              📅 {formatTanggalPajak(mobil.pajak)}
-            </span>
-            <span className="hidden md:inline">
-              📅 {formatTanggalPajak(mobil.pajak)}
-            </span>
+            <span>📅 {formatTanggalPajak(mobil.pajak)}</span>
           </div>
         </div>
 
-        {/* Harga - Responsive Font Size */}
-        <div className="mt-3 md:mt-5 text-orange-500 text-lg md:text-2xl font-bold">
+        {/* Harga */}
+        <div className="mt-3 text-orange-500 text-lg font-bold">
           Rp.{formatHarga(mobil.harga)}
         </div>
 
-        {/* Button - Responsive */}
-        <div className="mt-3 md:mt-5 border-t pt-3 md:pt-4">
+        {/* Button */}
+        <div className="mt-3 border-t pt-3">
           <Link href={`/detailmobilcs/${mobil._id}`}>
-            <button className="w-full md:w-auto border border-black px-3 py-2 md:px-4 md:py-2 rounded-full hover:bg-orange-500 hover:text-white transition text-sm md:text-base">
+            <button className="w-full border border-black px-3 py-2 rounded-full hover:bg-orange-500 hover:text-white transition text-sm">
               Lihat Detail
             </button>
           </Link>

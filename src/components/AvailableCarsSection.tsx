@@ -1,10 +1,10 @@
 // src/components/AvailableCarsSection.tsx
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import MobilCard from './MobilCard';
-import { MobilType } from '@/types/mobil';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import MobilCard from "./MobilCard";
+import { MobilType } from "@/types/mobil";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface AvailableCarsSectionProps {
   title?: string;
@@ -15,7 +15,7 @@ interface AvailableCarsSectionProps {
 const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   title = "Mobil Tersedia",
   showTitle = true,
-  itemsPerPage = 8
+  itemsPerPage = 8,
 }) => {
   const [mobils, setMobils] = useState<MobilType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,16 +27,16 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
     const fetchAvailableCars = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/mobil/tersedia');
-        
+        const response = await fetch("/api/mobil/tersedia");
+
         if (!response.ok) {
-          throw new Error('Gagal mengambil data mobil');
+          throw new Error("Gagal mengambil data mobil");
         }
-        
+
         const data = await response.json();
         setMobils(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
       } finally {
         setLoading(false);
       }
@@ -54,9 +54,9 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   const goToPage = (page: number) => {
     setCurrentPage(page);
     // Scroll to top of component
-    document.getElementById('available-cars-section')?.scrollIntoView({ 
-      behavior: 'smooth',
-      block: 'start'
+    document.getElementById("available-cars-section")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
     });
   };
 
@@ -76,7 +76,7 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -86,43 +86,43 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
         for (let i = 1; i <= 4; i++) {
           pages.push(i);
         }
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         pages.push(1);
-        pages.push('...');
+        pages.push("...");
         for (let i = totalPages - 3; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
         pages.push(1);
-        pages.push('...');
+        pages.push("...");
         pages.push(currentPage - 1);
         pages.push(currentPage);
         pages.push(currentPage + 1);
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
   if (loading) {
     return (
       <div className="w-full" id="available-cars-section">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {showTitle && (
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">{title}</h2>
             </div>
           )}
-          
+
           {/* Loading Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8 justify-items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
             {Array.from({ length: itemsPerPage }).map((_, index) => (
-              <div key={index} className="w-full max-w-sm">
-                <div className="bg-gray-200 animate-pulse rounded-2xl h-96 mb-4"></div>
+              <div key={index} className="w-full max-w-xs">
+                <div className="bg-gray-200 animate-pulse rounded-2xl h-80 mb-4"></div>
                 <div className="bg-gray-200 animate-pulse rounded h-4 mb-2"></div>
                 <div className="bg-gray-200 animate-pulse rounded h-4 w-3/4"></div>
               </div>
@@ -136,14 +136,14 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   if (error) {
     return (
       <div className="w-full" id="available-cars-section">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center py-12">
             <div className="text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
               Terjadi Kesalahan
             </h3>
             <p className="text-gray-500 mb-6">{error}</p>
-            <button 
+            <button
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
             >
@@ -158,13 +158,13 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   if (mobils.length === 0) {
     return (
       <div className="w-full" id="available-cars-section">
-        <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {showTitle && (
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">{title}</h2>
             </div>
           )}
-          
+
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🚗</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
@@ -181,20 +181,21 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
 
   return (
     <div className="w-full bg-gray-50" id="available-cars-section">
-      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         {showTitle && (
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold mb-2">{title}</h2>
             <p className="text-sm text-gray-500">
-              Menampilkan {startIndex + 1}-{Math.min(endIndex, mobils.length)} dari {mobils.length} mobil tersedia
+              Menampilkan {startIndex + 1}-{Math.min(endIndex, mobils.length)}{" "}
+              dari {mobils.length} mobil tersedia
             </p>
           </div>
         )}
 
-        {/* Grid Cards */}
+        {/* Grid Cards - Optimized for 4 columns */}
         <div className="flex justify-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-8 justify-items-center mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center mb-8 max-w-6xl">
             {currentMobils.map((mobil) => (
               <MobilCard key={mobil._id} mobil={mobil} />
             ))}
@@ -210,8 +211,8 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
               disabled={currentPage === 1}
               className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors ${
                 currentPage === 1
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300'
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300"
               }`}
             >
               <ChevronLeft className="w-4 h-4 mr-1" />
@@ -222,15 +223,15 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
             <div className="flex space-x-1">
               {getPageNumbers().map((page, index) => (
                 <React.Fragment key={index}>
-                  {page === '...' ? (
+                  {page === "..." ? (
                     <span className="px-3 py-2 text-gray-500">...</span>
                   ) : (
                     <button
                       onClick={() => goToPage(page as number)}
                       className={`px-3 py-2 rounded-lg font-medium transition-colors ${
                         currentPage === page
-                          ? 'bg-orange-500 text-white'
-                          : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300'
+                          ? "bg-orange-500 text-white"
+                          : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300"
                       }`}
                     >
                       {page}
@@ -246,8 +247,8 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
               disabled={currentPage === totalPages}
               className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors ${
                 currentPage === totalPages
-                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300'
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                  : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300"
               }`}
             >
               Next

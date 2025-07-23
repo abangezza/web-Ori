@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import SimulasiKreditForm from "@/components/forms/SimulasiKreditForm";
 import BeliCashForm from "@/components/forms/BeliCashForm";
 import TestDriveBookingForm from "@/components/forms/TestDriveBookingForm";
+import Image from "next/image";
 // Remove the import since we'll use API endpoint instead
 
 interface MobilDetailClientProps {
@@ -208,14 +209,15 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
                 className="accordion-item"
                 onClick={() => openImageModal(`/uploads/${foto}`)}
               >
-                <img
+                <Image
                   src={`/uploads/${foto}`}
                   alt={`Foto ${i + 1}`}
-                  className="accordion-image"
-                  onError={(e) => {
-                    console.error("Error loading image:", `/uploads/${foto}`);
-                    e.currentTarget.style.display = "none";
-                  }}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                  onError={() =>
+                    console.error("Error loading image:", `/uploads/${foto}`)
+                  }
                 />
 
                 <div className="image-overlay" />
@@ -654,11 +656,14 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
             </button>
 
             <div className="relative max-w-full max-h-full">
-              <img
+              <Image
                 src={selectedImage}
                 alt="Foto Mobil"
+                width={1500}
+                height={1200}
                 className="max-w-full max-h-full object-contain"
                 style={{ maxHeight: "calc(100vh - 120px)" }}
+                unoptimized
               />
             </div>
 

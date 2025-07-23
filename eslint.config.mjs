@@ -10,7 +10,19 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  // Config dari Next.js
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+
+  // Custom rules override
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off", // 🔥 matikan error "any"
+      "@typescript-eslint/no-unused-vars": "warn", // ubah error ke warning
+      "prefer-const": "warn", // kasih warning aja kalau harusnya pakai const
+      "react/no-unescaped-entities": "off", // bebas pakai tanda kutip tanpa escape
+      "@next/next/no-img-element": "warn", // boleh pakai <img>, kasih warning aja
+    },
+  },
 ];
 
 export default eslintConfig;

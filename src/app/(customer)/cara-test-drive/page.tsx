@@ -1,18 +1,20 @@
 // src/app/caratestdrive/page.tsx
-import React from 'react';
-import { 
-  Search, 
-  FileText, 
-  Calendar, 
-  Car, 
-  CheckCircle, 
+import React from "react";
+import {
+  Search,
+  FileText,
+  Calendar,
+  Car,
+  CheckCircle,
   MessageCircle,
   ArrowRight,
   Clock,
   Shield,
   MapPin,
-  Phone
-} from 'lucide-react';
+  Phone,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 const CaraTestDrivePage = () => {
   // Test Drive Steps
@@ -20,31 +22,35 @@ const CaraTestDrivePage = () => {
     {
       id: 1,
       title: "Lihat Daftar Mobil",
-      description: "Customer dapat melihat daftar unit mobil atau motor yang tersedia pada website resmi Radja Auto Car.",
+      description:
+        "Customer dapat melihat daftar unit mobil atau motor yang tersedia pada website resmi Radja Auto Car.",
       icon: Search,
-      color: "bg-blue-500"
+      color: "bg-blue-500",
     },
     {
       id: 2,
       title: "Isi Form Pendaftaran",
-      description: "Customer mengisi form yang didaftarkan untuk melakukan test drive.",
+      description:
+        "Customer mengisi form yang didaftarkan untuk melakukan test drive.",
       icon: FileText,
-      color: "bg-green-500"
+      color: "bg-green-500",
     },
     {
       id: 3,
       title: "Konfirmasi Showroom",
-      description: "Customer mengkonfirmasi pihak showroom perihal pendaftaran test drive pada mobil dan tanggal yang sudah ditentukan.",
+      description:
+        "Customer mengkonfirmasi pihak showroom perihal pendaftaran test drive pada mobil dan tanggal yang sudah ditentukan.",
       icon: Calendar,
-      color: "bg-orange-500"
+      color: "bg-orange-500",
     },
     {
       id: 4,
       title: "Datang ke Showroom",
-      description: "Customer datang ke showroom pada tanggal yang sudah ditentukan guna melakukan test drive.",
+      description:
+        "Customer datang ke showroom pada tanggal yang sudah ditentukan guna melakukan test drive.",
       icon: Car,
-      color: "bg-purple-500"
-    }
+      color: "bg-purple-500",
+    },
   ];
 
   // Requirements
@@ -53,7 +59,7 @@ const CaraTestDrivePage = () => {
     "SIM A yang masih aktif",
     "Usia minimal 21 tahun",
     "Dalam kondisi sehat",
-    "Mengikuti instruksi sales"
+    "Mengikuti instruksi sales",
   ];
 
   return (
@@ -63,12 +69,22 @@ const CaraTestDrivePage = () => {
         <div className="container mx-auto px-6 text-center">
           <div className="flex items-center justify-center mb-6">
             <div className="bg-black rounded-full p-3 mr-4">
-              <img src="/Lambang bulat.png" alt="Radja Auto Car" className="w-10 h-10" />
+              <Image
+                src="/lambang bulat.png"
+                alt="Radja Auto Car"
+                width={64} // 16 * 4 = 64px
+                height={64}
+                className="w-16 h-16"
+                unoptimized
+              />
             </div>
-            <h1 className="text-4xl font-bold">Cara Test Drive di Radja Auto Car</h1>
+            <h1 className="text-4xl font-bold">
+              Cara Test Drive di Radja Auto Car
+            </h1>
           </div>
           <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-            Berikut adalah beberapa langkah calon pembeli jika ingin melakukan test drive.
+            Berikut adalah beberapa langkah calon pembeli jika ingin melakukan
+            test drive.
           </p>
         </div>
       </section>
@@ -77,8 +93,12 @@ const CaraTestDrivePage = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-800 mb-4">4 Langkah Mudah Test Drive</h2>
-            <p className="text-gray-600">Ikuti langkah-langkah berikut untuk melakukan test drive</p>
+            <h2 className="text-3xl font-bold text-gray-800 mb-4">
+              4 Langkah Mudah Test Drive
+            </h2>
+            <p className="text-gray-600">
+              Ikuti langkah-langkah berikut untuk melakukan test drive
+            </p>
           </div>
 
           <div className="max-w-6xl mx-auto">
@@ -87,7 +107,9 @@ const CaraTestDrivePage = () => {
                 <div key={step.id} className="text-center">
                   {/* Step Number & Icon */}
                   <div className="relative mb-6">
-                    <div className={`w-20 h-20 mx-auto rounded-full ${step.color} flex items-center justify-center shadow-lg`}>
+                    <div
+                      className={`w-20 h-20 mx-auto rounded-full ${step.color} flex items-center justify-center shadow-lg`}
+                    >
                       <step.icon className="w-10 h-10 text-white" />
                     </div>
                     <div className="absolute -top-2 -right-2 bg-red-500 text-white text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center">
@@ -96,8 +118,12 @@ const CaraTestDrivePage = () => {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-xl font-bold text-gray-800 mb-3">{step.title}</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">{step.description}</p>
+                  <h3 className="text-xl font-bold text-gray-800 mb-3">
+                    {step.title}
+                  </h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {step.description}
+                  </p>
 
                   {/* Arrow for desktop */}
                   {index < testDriveSteps.length - 1 && (
@@ -119,9 +145,12 @@ const CaraTestDrivePage = () => {
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Left: Requirements */}
               <div>
-                <h2 className="text-3xl font-bold text-gray-800 mb-6">Syarat Test Drive</h2>
+                <h2 className="text-3xl font-bold text-gray-800 mb-6">
+                  Syarat Test Drive
+                </h2>
                 <p className="text-gray-600 mb-6">
-                  Pastikan Anda memenuhi syarat berikut sebelum melakukan test drive:
+                  Pastikan Anda memenuhi syarat berikut sebelum melakukan test
+                  drive:
                 </p>
                 <ul className="space-y-3">
                   {requirements.map((req, index) => (
@@ -135,33 +164,43 @@ const CaraTestDrivePage = () => {
 
               {/* Right: Info */}
               <div className="bg-white rounded-xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold text-gray-800 mb-6">Informasi Penting</h3>
-                
+                <h3 className="text-2xl font-bold text-gray-800 mb-6">
+                  Informasi Penting
+                </h3>
+
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-blue-500" />
                     <div>
-                      <p className="font-semibold text-gray-800">Durasi Test Drive</p>
-                      <p className="text-gray-600 text-sm">15-30 menit per kendaraan</p>
+                      <p className="font-semibold text-gray-800">
+                        Durasi Test Drive
+                      </p>
+                      <p className="text-gray-600 text-sm">
+                        15-30 menit per kendaraan
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5 text-green-500" />
                     <div>
                       <p className="font-semibold text-gray-800">Keamanan</p>
-                      <p className="text-gray-600 text-sm">Didampingi sales berpengalaman</p>
+                      <p className="text-gray-600 text-sm">
+                        Didampingi sales berpengalaman
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5 text-red-500" />
                     <div>
                       <p className="font-semibold text-gray-800">Lokasi</p>
-                      <p className="text-gray-600 text-sm">2 showroom tersedia</p>
+                      <p className="text-gray-600 text-sm">
+                        2 showroom tersedia
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <Car className="w-5 h-5 text-purple-500" />
                     <div>
@@ -181,29 +220,52 @@ const CaraTestDrivePage = () => {
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-gray-800 mb-4">Pertanyaan Umum</h2>
-              <p className="text-gray-600">Beberapa pertanyaan yang sering ditanyakan</p>
+              <h2 className="text-3xl font-bold text-gray-800 mb-4">
+                Pertanyaan Umum
+              </h2>
+              <p className="text-gray-600">
+                Beberapa pertanyaan yang sering ditanyakan
+              </p>
             </div>
 
             <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-bold text-gray-800 mb-2">Apakah test drive gratis?</h3>
-                <p className="text-gray-600">Ya, semua test drive di Radja Auto Car tidak dikenakan biaya apapun.</p>
+                <h3 className="font-bold text-gray-800 mb-2">
+                  Apakah test drive gratis?
+                </h3>
+                <p className="text-gray-600">
+                  Ya, semua test drive di Radja Auto Car tidak dikenakan biaya
+                  apapun.
+                </p>
               </div>
-              
+
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-bold text-gray-800 mb-2">Berapa lama bisa test drive?</h3>
-                <p className="text-gray-600">Durasi test drive adalah 15-30 menit, tergantung jenis kendaraan.</p>
+                <h3 className="font-bold text-gray-800 mb-2">
+                  Berapa lama bisa test drive?
+                </h3>
+                <p className="text-gray-600">
+                  Durasi test drive adalah 15-30 menit, tergantung jenis
+                  kendaraan.
+                </p>
               </div>
-              
+
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-bold text-gray-800 mb-2">Apakah harus bawa SIM sendiri?</h3>
-                <p className="text-gray-600">Ya, wajib membawa SIM A yang masih berlaku untuk keamanan.</p>
+                <h3 className="font-bold text-gray-800 mb-2">
+                  Apakah harus bawa SIM sendiri?
+                </h3>
+                <p className="text-gray-600">
+                  Ya, wajib membawa SIM A yang masih berlaku untuk keamanan.
+                </p>
               </div>
-              
+
               <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-bold text-gray-800 mb-2">Bisa test drive di hari libur?</h3>
-                <p className="text-gray-600">Bisa, kami buka setiap hari termasuk weekend dengan jam yang berbeda.</p>
+                <h3 className="font-bold text-gray-800 mb-2">
+                  Bisa test drive di hari libur?
+                </h3>
+                <p className="text-gray-600">
+                  Bisa, kami buka setiap hari termasuk weekend dengan jam yang
+                  berbeda.
+                </p>
               </div>
             </div>
           </div>
@@ -215,18 +277,18 @@ const CaraTestDrivePage = () => {
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-4">Siap untuk Test Drive?</h2>
           <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Hubungi kami sekarang untuk menjadwalkan test drive mobil impian Anda.
+            Hubungi kami sekarang untuk menjadwalkan test drive mobil impian
+            Anda.
           </p>
-          
+
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <a 
+            <Link
               href="/mobil/tersedia"
-              className="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold hover:bg-blue-50 transition-colors inline-flex items-center justify-center gap-3"
+              className="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold hover:bg-blue-50 transition-colors inline-flex items-center justify-center gap-3"
             >
-              <Car className="w-5 h-5" />
               Lihat Mobil Tersedia
-            </a>
-            <a 
+            </Link>
+            <a
               href="https://wa.me/628111110067?text=Halo, saya ingin mendaftar test drive"
               className="bg-green-600 text-white px-8 py-4 rounded-lg font-bold hover:bg-green-700 transition-colors inline-flex items-center justify-center gap-3"
             >

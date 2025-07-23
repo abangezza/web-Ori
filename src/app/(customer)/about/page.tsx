@@ -1,11 +1,21 @@
 // src/app/about/page.tsx
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { MapPin, Phone, MessageCircle, Users, Handshake, Award, Clock, Shield, Star } from 'lucide-react';
+import React, { useState } from "react";
+import {
+  MapPin,
+  Phone,
+  MessageCircle,
+  Users,
+  Award,
+  Clock,
+  Shield,
+  Star,
+} from "lucide-react";
+import Image from "next/image";
 
 const AboutPage = () => {
-  const [question, setQuestion] = useState('');
+  const [question, setQuestion] = useState("");
 
   // Team members data
   const teamMembers = [
@@ -13,26 +23,26 @@ const AboutPage = () => {
       name: "Ahmad Reza",
       position: "Founder & CEO",
       image: "/team/ceo.jpg",
-      description: "Pengalaman 15 tahun di industri otomotif"
+      description: "Pengalaman 15 tahun di industri otomotif",
     },
     {
       name: "Siti Nurhaliza",
       position: "Sales Manager",
-      image: "/team/sales.jpg", 
-      description: "Expert dalam konsultasi dan penjualan mobil"
+      image: "/team/sales.jpg",
+      description: "Expert dalam konsultasi dan penjualan mobil",
     },
     {
       name: "Budi Santoso",
       position: "Service Manager",
       image: "/team/service.jpg",
-      description: "Spesialis perawatan dan perbaikan kendaraan"
+      description: "Spesialis perawatan dan perbaikan kendaraan",
     },
     {
       name: "Maya Indira",
       position: "Customer Relations",
       image: "/team/customer.jpg",
-      description: "Mengutamakan kepuasan pelanggan"
-    }
+      description: "Mengutamakan kepuasan pelanggan",
+    },
   ];
 
   // Partners data
@@ -42,7 +52,7 @@ const AboutPage = () => {
     { name: "Suzuki", logo: "/partners/suzuki.png" },
     { name: "Nissan", logo: "/partners/nissan.png" },
     { name: "Mitsubishi", logo: "/partners/mitsubishi.png" },
-    { name: "Daihatsu", logo: "/partners/daihatsu.png" }
+    { name: "Daihatsu", logo: "/partners/daihatsu.png" },
   ];
 
   // Company stats
@@ -50,13 +60,16 @@ const AboutPage = () => {
     { number: "10+", label: "Tahun Pengalaman", icon: Clock },
     { number: "5000+", label: "Pelanggan Puas", icon: Users },
     { number: "2", label: "Lokasi Showroom", icon: MapPin },
-    { number: "100%", label: "Garansi Kualitas", icon: Shield }
+    { number: "100%", label: "Garansi Kualitas", icon: Shield },
   ];
 
   const handleWhatsAppClick = () => {
-    const message = question || "Halo, saya tertarik dengan layanan Radja Auto Car";
-    const whatsappUrl = `https://wa.me/628111110067?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    const message =
+      question || "Halo, saya tertarik dengan layanan Radja Auto Car";
+    const whatsappUrl = `https://wa.me/628111110067?text=${encodeURIComponent(
+      message
+    )}`;
+    window.open(whatsappUrl, "_blank");
   };
 
   return (
@@ -65,18 +78,24 @@ const AboutPage = () => {
       <section className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-20">
         <div className="container mx-auto px-6 text-center">
           <div className="bg-black rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center shadow-2xl">
-            <img
-              src="/Lambang bulat.png"
+            <Image
+              src="/lambang bulat.png"
               alt="Radja Auto Car"
+              width={64} // 16 * 4 = 64px
+              height={64}
               className="w-16 h-16"
+              unoptimized
             />
           </div>
-          <h1 className="text-5xl font-bold mb-4" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <h1
+            className="text-5xl font-bold mb-4"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+          >
             Tentang Radja Auto Car
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-            Dealer mobil terpercaya dengan pengalaman lebih dari 10 tahun dalam memberikan 
-            pelayanan terbaik untuk kebutuhan kendaraan impian Anda.
+            Dealer mobil terpercaya dengan pengalaman lebih dari 10 tahun dalam
+            memberikan pelayanan terbaik untuk kebutuhan kendaraan impian Anda.
           </p>
         </div>
       </section>
@@ -90,7 +109,9 @@ const AboutPage = () => {
                 <div className="bg-orange-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                   <stat.icon className="w-8 h-8 text-orange-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">{stat.number}</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">
+                  {stat.number}
+                </div>
                 <div className="text-gray-600 font-medium">{stat.label}</div>
               </div>
             ))}
@@ -113,46 +134,75 @@ const AboutPage = () => {
                       <Award className="w-6 h-6 text-orange-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2">Kualitas Terjamin</h3>
-                      <p className="text-gray-600">Setiap mobil telah melalui inspeksi ketat untuk memastikan kualitas terbaik bagi pelanggan.</p>
+                      <h3 className="text-xl font-semibold mb-2">
+                        Kualitas Terjamin
+                      </h3>
+                      <p className="text-gray-600">
+                        Setiap mobil telah melalui inspeksi ketat untuk
+                        memastikan kualitas terbaik bagi pelanggan.
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-4">
                     <div className="bg-orange-100 rounded-full p-3 flex-shrink-0">
                       <Star className="w-6 h-6 text-orange-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2">Pelayanan Prima</h3>
-                      <p className="text-gray-600">Tim profesional kami siap membantu Anda menemukan mobil yang sesuai dengan kebutuhan dan budget.</p>
+                      <h3 className="text-xl font-semibold mb-2">
+                        Pelayanan Prima
+                      </h3>
+                      <p className="text-gray-600">
+                        Tim profesional kami siap membantu Anda menemukan mobil
+                        yang sesuai dengan kebutuhan dan budget.
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-start gap-4">
                     <div className="bg-orange-100 rounded-full p-3 flex-shrink-0">
                       <Shield className="w-6 h-6 text-orange-600" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-semibold mb-2">Transaksi Aman</h3>
-                      <p className="text-gray-600">Proses jual beli yang transparan dan aman dengan dokumentasi lengkap dan legal.</p>
+                      <h3 className="text-xl font-semibold mb-2">
+                        Transaksi Aman
+                      </h3>
+                      <p className="text-gray-600">
+                        Proses jual beli yang transparan dan aman dengan
+                        dokumentasi lengkap dan legal.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-8 shadow-lg">
-                <h3 className="text-2xl font-bold mb-6 text-gray-800">Visi & Misi</h3>
+                <h3 className="text-2xl font-bold mb-6 text-gray-800">
+                  Visi & Misi
+                </h3>
                 <div className="space-y-6">
                   <div>
-                    <h4 className="text-lg font-semibold text-orange-600 mb-2">Visi</h4>
-                    <p className="text-gray-600">Menjadi dealer mobil terdepan dan terpercaya di Indonesia yang memberikan solusi kendaraan terbaik untuk setiap keluarga.</p>
+                    <h4 className="text-lg font-semibold text-orange-600 mb-2">
+                      Visi
+                    </h4>
+                    <p className="text-gray-600">
+                      Menjadi dealer mobil terdepan dan terpercaya di Indonesia
+                      yang memberikan solusi kendaraan terbaik untuk setiap
+                      keluarga.
+                    </p>
                   </div>
                   <div>
-                    <h4 className="text-lg font-semibold text-orange-600 mb-2">Misi</h4>
+                    <h4 className="text-lg font-semibold text-orange-600 mb-2">
+                      Misi
+                    </h4>
                     <ul className="text-gray-600 space-y-2">
-                      <li>• Menyediakan mobil berkualitas dengan harga kompetitif</li>
+                      <li>
+                        • Menyediakan mobil berkualitas dengan harga kompetitif
+                      </li>
                       <li>• Memberikan pelayanan profesional dan ramah</li>
-                      <li>• Membangun kepercayaan jangka panjang dengan pelanggan</li>
+                      <li>
+                        • Membangun kepercayaan jangka panjang dengan pelanggan
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -166,20 +216,30 @@ const AboutPage = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 text-gray-800">Tim Profesional Kami</h2>
+            <h2 className="text-4xl font-bold mb-4 text-gray-800">
+              Tim Profesional Kami
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Dikelola oleh tim berpengalaman yang berkomitmen memberikan layanan terbaik
+              Dikelola oleh tim berpengalaman yang berkomitmen memberikan
+              layanan terbaik
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {teamMembers.map((member, index) => (
-              <div key={index} className="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow">
+              <div
+                key={index}
+                className="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow"
+              >
                 <div className="w-24 h-24 bg-gray-300 rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Users className="w-12 h-12 text-gray-600" />
                 </div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-800">{member.name}</h3>
-                <p className="text-orange-600 font-medium mb-3">{member.position}</p>
+                <h3 className="text-xl font-semibold mb-2 text-gray-800">
+                  {member.name}
+                </h3>
+                <p className="text-orange-600 font-medium mb-3">
+                  {member.position}
+                </p>
                 <p className="text-gray-600 text-sm">{member.description}</p>
               </div>
             ))}
@@ -191,15 +251,24 @@ const AboutPage = () => {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 text-gray-800">Mitra Kerja Sama</h2>
-            <p className="text-xl text-gray-600">Bekerja sama dengan brand-brand terkemuka</p>
+            <h2 className="text-4xl font-bold mb-4 text-gray-800">
+              Mitra Kerja Sama
+            </h2>
+            <p className="text-xl text-gray-600">
+              Bekerja sama dengan brand-brand terkemuka
+            </p>
           </div>
-          
+
           <div className="grid grid-cols-3 md:grid-cols-6 gap-8 items-center">
             {partners.map((partner, index) => (
-              <div key={index} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div
+                key={index}
+                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+              >
                 <div className="h-16 flex items-center justify-center">
-                  <span className="text-2xl font-bold text-gray-700">{partner.name}</span>
+                  <span className="text-2xl font-bold text-gray-700">
+                    {partner.name}
+                  </span>
                 </div>
               </div>
             ))}
@@ -211,10 +280,14 @@ const AboutPage = () => {
       <section className="py-16 bg-white">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold mb-4 text-gray-800">Lokasi Showroom</h2>
-            <p className="text-xl text-gray-600">Kunjungi showroom kami di 2 lokasi</p>
+            <h2 className="text-4xl font-bold mb-4 text-gray-800">
+              Lokasi Showroom
+            </h2>
+            <p className="text-xl text-gray-600">
+              Kunjungi showroom kami di 2 lokasi
+            </p>
           </div>
-          
+
           <div className="grid md:grid-cols-2 gap-12">
             {/* Location 1 */}
             <div className="bg-gray-50 rounded-2xl overflow-hidden shadow-lg">
@@ -230,7 +303,9 @@ const AboutPage = () => {
                 ></iframe>
               </div>
               <div className="p-6">
-                <h3 className="text-2xl font-bold mb-3 text-gray-800">Radja Auto Car 1</h3>
+                <h3 className="text-2xl font-bold mb-3 text-gray-800">
+                  Radja Auto Car 1
+                </h3>
                 <div className="flex items-start gap-3 mb-4">
                   <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-1" />
                   <p className="text-gray-600">
@@ -263,7 +338,9 @@ const AboutPage = () => {
                 ></iframe>
               </div>
               <div className="p-6">
-                <h3 className="text-2xl font-bold mb-3 text-gray-800">Radja Auto Car 2</h3>
+                <h3 className="text-2xl font-bold mb-3 text-gray-800">
+                  Radja Auto Car 2
+                </h3>
                 <div className="flex items-start gap-3 mb-4">
                   <MapPin className="w-5 h-5 text-orange-600 flex-shrink-0 mt-1" />
                   <p className="text-gray-600">
@@ -291,9 +368,11 @@ const AboutPage = () => {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold mb-4">Hubungi Kami</h2>
-              <p className="text-xl text-gray-300">Ada pertanyaan? Jangan ragu untuk bertanya!</p>
+              <p className="text-xl text-gray-300">
+                Ada pertanyaan? Jangan ragu untuk bertanya!
+              </p>
             </div>
-            
+
             <div className="grid md:grid-cols-2 gap-12">
               {/* Contact Info */}
               <div className="space-y-8">
@@ -309,27 +388,31 @@ const AboutPage = () => {
                         <p className="text-gray-300">+62 811-1110-067</p>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-4">
                       <div className="bg-orange-600 rounded-full p-3">
                         <Clock className="w-6 h-6" />
                       </div>
                       <div>
                         <p className="font-semibold">Jam Operasional</p>
-                        <p className="text-gray-300">Senin - Sabtu: 08.00 - 17.00</p>
+                        <p className="text-gray-300">
+                          Senin - Sabtu: 08.00 - 17.00
+                        </p>
                         <p className="text-gray-300">Minggu: 08.00 - 15.00</p>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Question Form */}
               <div className="bg-gray-800 rounded-2xl p-8">
                 <h3 className="text-2xl font-bold mb-6">Kirim Pertanyaan</h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Pertanyaan Anda</label>
+                    <label className="block text-sm font-medium mb-2">
+                      Pertanyaan Anda
+                    </label>
                     <textarea
                       value={question}
                       onChange={(e) => setQuestion(e.target.value)}
@@ -338,7 +421,7 @@ const AboutPage = () => {
                       rows={4}
                     />
                   </div>
-                  
+
                   <button
                     onClick={handleWhatsAppClick}
                     className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-3"
@@ -346,9 +429,10 @@ const AboutPage = () => {
                     <MessageCircle className="w-5 h-5" />
                     Kirim via WhatsApp
                   </button>
-                  
+
                   <p className="text-sm text-gray-400 text-center">
-                    Akan mengarahkan ke WhatsApp untuk chat langsung dengan tim kami
+                    Akan mengarahkan ke WhatsApp untuk chat langsung dengan tim
+                    kami
                   </p>
                 </div>
               </div>

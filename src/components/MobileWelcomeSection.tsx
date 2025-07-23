@@ -1,16 +1,18 @@
 // src/components/MobileWelcomeSection.tsx
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 interface MobileWelcomeSectionProps {
   mobilCount: number;
 }
 
-const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({ mobilCount }) => {
+const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
+  mobilCount,
+}) => {
   const handleScrollToAvailableCars = () => {
-    document.getElementById('available-cars')?.scrollIntoView({ 
-      behavior: 'smooth' 
+    document.getElementById("available-cars")?.scrollIntoView({
+      behavior: "smooth",
     });
   };
 
@@ -29,12 +31,15 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({ mobilCount 
         <div className="mb-8">
           <div className="bg-black rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-2xl">
             <img
-              src="/Lambang bulat.png"
+              src="/lambang bulat.png"
               alt="Radja Auto Car"
               className="w-12 h-12"
             />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+          <h1
+            className="text-3xl font-bold text-white mb-2"
+            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+          >
             Radja Auto Car
           </h1>
           <div className="w-16 h-1 bg-orange-500 mx-auto rounded-full"></div>
@@ -46,9 +51,9 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({ mobilCount 
             Selamat Datang di
             <span className="block text-orange-400">Radja Auto Car</span>
           </h2>
-          
+
           <p className="text-lg text-gray-300 leading-relaxed max-w-md mx-auto">
-            Temukan mobil impian Anda dengan koleksi terlengkap dan terpercaya. 
+            Temukan mobil impian Anda dengan koleksi terlengkap dan terpercaya.
             Kualitas terbaik, harga terjangkau, dan pelayanan prima.
           </p>
         </div>
@@ -57,34 +62,42 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({ mobilCount 
         <div className="grid grid-cols-2 gap-4 mb-10 max-w-sm mx-auto">
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
             <div className="text-2xl mb-2">🚗</div>
-            <div className="text-white font-semibold text-sm">Mobil Berkualitas</div>
+            <div className="text-white font-semibold text-sm">
+              Mobil Berkualitas
+            </div>
           </div>
-          
+
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
             <div className="text-2xl mb-2">💰</div>
-            <div className="text-white font-semibold text-sm">Harga Terjangkau</div>
+            <div className="text-white font-semibold text-sm">
+              Harga Terjangkau
+            </div>
           </div>
-          
+
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
             <div className="text-2xl mb-2">🔧</div>
-            <div className="text-white font-semibold text-sm">Service Terpercaya</div>
+            <div className="text-white font-semibold text-sm">
+              Service Terpercaya
+            </div>
           </div>
-          
+
           <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
             <div className="text-2xl mb-2">⭐</div>
-            <div className="text-white font-semibold text-sm">Pelayanan Prima</div>
+            <div className="text-white font-semibold text-sm">
+              Pelayanan Prima
+            </div>
           </div>
         </div>
 
         {/* Call to Action */}
         <div className="space-y-4">
-          <button 
+          <button
             onClick={handleScrollToAvailableCars}
             className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-xl hover:shadow-2xl text-lg w-full max-w-xs mx-auto block"
           >
             Lihat Mobil Tersedia
           </button>
-          
+
           <p className="text-gray-400 text-sm">
             {mobilCount} mobil tersedia untuk Anda
           </p>
@@ -94,8 +107,18 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({ mobilCount 
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <div className="flex flex-col items-center text-gray-400">
             <span className="text-xs mb-2">Scroll ke bawah</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
             </svg>
           </div>
         </div>

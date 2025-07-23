@@ -11,18 +11,18 @@ interface MobilCardProps {
 export default function MobilCard({ mobil }: MobilCardProps) {
   // Format harga ke format Indonesia
   const formatHarga = (harga: number) => {
-    return new Intl.NumberFormat('id-ID').format(harga);
+    return new Intl.NumberFormat("id-ID").format(harga);
   };
 
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'tersedia':
-        return 'bg-green-600';
-      case 'terjual':
-        return 'bg-red-600';
+      case "tersedia":
+        return "bg-green-600";
+      case "terjual":
+        return "bg-red-600";
       default:
-        return 'bg-gray-600';
+        return "bg-gray-600";
     }
   };
 
@@ -31,23 +31,33 @@ export default function MobilCard({ mobil }: MobilCardProps) {
     if (mobil.fotos && mobil.fotos.length > 0) {
       return `/uploads/${mobil.fotos[0]}`;
     }
-    return '/lambang 1.png'; // fallback image
+    return "/lambang 1.png"; // fallback image
   };
 
   // Format tanggal pajak ke format Indonesia
   const formatTanggalPajak = (tanggal: string) => {
-    if (!tanggal) return 'Tidak tersedia';
-    
+    if (!tanggal) return "Tidak tersedia";
+
     const bulanIndonesia = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "Mei",
+      "Jun",
+      "Jul",
+      "Agu",
+      "Sep",
+      "Okt",
+      "Nov",
+      "Des",
     ];
-    
+
     const date = new Date(tanggal);
     const hari = date.getDate();
     const bulan = bulanIndonesia[date.getMonth()];
     const tahun = date.getFullYear();
-    
+
     return `${hari}-${bulan}-${tahun}`;
   };
 
@@ -61,10 +71,14 @@ export default function MobilCard({ mobil }: MobilCardProps) {
           fill
           className="object-cover"
         />
-        
+
         {/* Status dan Tahun Badges - Responsive Size */}
         <div className="absolute top-2 left-2 flex gap-1 md:gap-2">
-          <span className={`${getStatusColor(mobil.status)} text-white text-xs md:text-sm font-bold px-2 py-1 md:px-4 md:py-2 rounded-full capitalize`}>
+          <span
+            className={`${getStatusColor(
+              mobil.status
+            )} text-white text-xs md:text-sm font-bold px-2 py-1 md:px-4 md:py-2 rounded-full capitalize`}
+          >
             {mobil.status}
           </span>
           <span className="bg-orange-600 text-white text-xs md:text-sm font-bold px-2 py-1 md:px-4 md:py-2 rounded-full">
@@ -79,7 +93,7 @@ export default function MobilCard({ mobil }: MobilCardProps) {
         <h3 className="text-orange-800 text-lg md:text-2xl font-serif font-semibold">
           {mobil.merek}
         </h3>
-        
+
         {/* Tipe dan Transmisi - Responsive */}
         <h2 className="text-lg md:text-2xl font-medium truncate text-gray-800">
           {mobil.tipe} • {mobil.transmisi}
@@ -91,8 +105,12 @@ export default function MobilCard({ mobil }: MobilCardProps) {
           <div className="flex flex-col gap-1 md:flex-row md:flex-wrap md:gap-4 text-sm md:text-base">
             <span>🚗 {mobil.kilometer}</span>
             <span>⛽ {mobil.bahan_bakar}</span>
-            <span className="md:hidden">📅 {formatTanggalPajak(mobil.pajak)}</span>
-            <span className="hidden md:inline">📅 {formatTanggalPajak(mobil.pajak)}</span>
+            <span className="md:hidden">
+              📅 {formatTanggalPajak(mobil.pajak)}
+            </span>
+            <span className="hidden md:inline">
+              📅 {formatTanggalPajak(mobil.pajak)}
+            </span>
           </div>
         </div>
 

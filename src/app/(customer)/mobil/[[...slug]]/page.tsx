@@ -19,11 +19,11 @@ type PageProps = {
 
 export default async function Page({ params, searchParams }: PageProps) {
   await connectMongo();
-  
+
   const slug = params.slug || [];
-  const currentPage = parseInt(searchParams.page || '1');
+  const currentPage = parseInt(searchParams.page || "1");
   const itemsPerPage = 8;
-  
+
   let allMobils: MobilType[] = [];
   let pageTitle = "Semua Mobil";
   let filterInfo = "";
@@ -61,17 +61,19 @@ export default async function Page({ params, searchParams }: PageProps) {
           const data = await Mobil.findById(filter).lean();
           if (data) {
             showSearchFilter = false;
-            allMobils = [{
-              ...data,
-              _id: data._id.toString(),
-            }];
+            allMobils = [
+              {
+                ...data,
+                _id: data._id.toString(),
+              },
+            ];
             pageTitle = `${data.merek} ${data.tipe}`;
           } else {
             // Jika ID tidak ditemukan
             pageTitle = "Mobil Tidak Ditemukan";
             filterInfo = `ID "${filter}" tidak ditemukan`;
           }
-        } catch (idError) {
+        } catch {
           // Jika format ID tidak valid
           pageTitle = "Mobil Tidak Ditemukan";
           filterInfo = `Format ID "${filter}" tidak valid`;
@@ -82,24 +84,24 @@ export default async function Page({ params, searchParams }: PageProps) {
     // Jika slug terdiri dari 3 item → filter berdasarkan merek, transmisi, tahun
     else if (slug.length === 3) {
       const [merek, transmisi, tahun] = slug;
-      
+
       // Set initial filters for the search component
       initialFilters = {
-        merek: merek !== 'all' ? merek : 'all',
-        transmisi: transmisi !== 'all' ? transmisi : 'all',
-        tahun: tahun !== 'all' ? tahun : 'all'
+        merek: merek !== "all" ? merek : "all",
+        transmisi: transmisi !== "all" ? transmisi : "all",
+        tahun: tahun !== "all" ? tahun : "all",
       };
-      
+
       const query: any = {};
-      
+
       // Build query object
-      if (merek && merek !== 'all') {
-        query.merek = new RegExp(merek.replace(/\+/g, ' '), 'i'); // Handle URL encoding
+      if (merek && merek !== "all") {
+        query.merek = new RegExp(merek.replace(/\+/g, " "), "i"); // Handle URL encoding
       }
-      if (transmisi && transmisi !== 'all') {
-        query.transmisi = new RegExp(transmisi, 'i');
+      if (transmisi && transmisi !== "all") {
+        query.transmisi = new RegExp(transmisi, "i");
       }
-      if (tahun && tahun !== 'all' && !isNaN(parseInt(tahun))) {
+      if (tahun && tahun !== "all" && !isNaN(parseInt(tahun))) {
         query.tahun = parseInt(tahun);
       }
 
@@ -108,13 +110,13 @@ export default async function Page({ params, searchParams }: PageProps) {
         ...mobil,
         _id: mobil._id.toString(),
       }));
-      
+
       pageTitle = "Hasil Pencarian Mobil";
       const filters = [];
-      if (merek !== 'all') filters.push(`Merek: ${merek.replace(/\+/g, ' ')}`);
-      if (transmisi !== 'all') filters.push(`Transmisi: ${transmisi}`);
-      if (tahun !== 'all') filters.push(`Tahun: ${tahun}`);
-      filterInfo = filters.length > 0 ? `Filter: ${filters.join(' | ')}` : '';
+      if (merek !== "all") filters.push(`Merek: ${merek.replace(/\+/g, " ")}`);
+      if (transmisi !== "all") filters.push(`Transmisi: ${transmisi}`);
+      if (tahun !== "all") filters.push(`Tahun: ${tahun}`);
+      filterInfo = filters.length > 0 ? `Filter: ${filters.join(" | ")}` : "";
     }
 
     // Jika struktur slug tidak sesuai
@@ -125,17 +127,19 @@ export default async function Page({ params, searchParams }: PageProps) {
 
     // ✨ FITUR BARU: Sort berdasarkan status (tersedia dulu, baru terjual)
     // Hanya sort jika bukan pencarian berdasarkan status spesifik
-    if (slug.length !== 1 || !["tersedia", "terjual"].includes(slug[0].toLowerCase())) {
+    if (
+      slug.length !== 1 ||
+      !["tersedia", "terjual"].includes(slug[0].toLowerCase())
+    ) {
       allMobils.sort((a, b) => {
         // Status 'tersedia' akan memiliki prioritas lebih tinggi
-        if (a.status === 'tersedia' && b.status === 'terjual') return -1;
-        if (a.status === 'terjual' && b.status === 'tersedia') return 1;
-        
+        if (a.status === "tersedia" && b.status === "terjual") return -1;
+        if (a.status === "terjual" && b.status === "tersedia") return 1;
+
         // Jika status sama, sort berdasarkan tahun terbaru
         return parseInt(b.tahun) - parseInt(a.tahun);
       });
     }
-
   } catch (error) {
     console.error("Error fetching mobil data:", error);
     allMobils = [];
@@ -150,15 +154,19 @@ export default async function Page({ params, searchParams }: PageProps) {
   const currentMobils = allMobils.slice(startIndex, endIndex);
 
   // Count untuk informasi tambahan
-  const tersediaCount = allMobils.filter(mobil => mobil.status === 'tersedia').length;
-  const terjualCount = allMobils.filter(mobil => mobil.status === 'terjual').length;
+  const tersediaCount = allMobils.filter(
+    (mobil) => mobil.status === "tersedia"
+  ).length;
+  const terjualCount = allMobils.filter(
+    (mobil) => mobil.status === "terjual"
+  ).length;
 
   // Build current URL for pagination
   const getBaseUrl = () => {
-    if (slug.length === 0) return '/mobil';
+    if (slug.length === 0) return "/mobil";
     if (slug.length === 1) return `/mobil/${slug[0]}`;
-    if (slug.length === 3) return `/mobil/${slug.join('/')}`;
-    return '/mobil';
+    if (slug.length === 3) return `/mobil/${slug.join("/")}`;
+    return "/mobil";
   };
 
   return (
@@ -174,11 +182,15 @@ export default async function Page({ params, searchParams }: PageProps) {
             <p>
               Ditemukan {totalItems} mobil
               {/* Tampilkan breakdown status jika ada pencarian/filter */}
-              {(slug.length > 0 && !["tersedia", "terjual"].includes(slug[0]?.toLowerCase() || '')) && totalItems > 0 && (
-                <span className="ml-2">
-                  ({tersediaCount} tersedia, {terjualCount} terjual)
-                </span>
-              )}
+              {slug.length > 0 &&
+                !["tersedia", "terjual"].includes(
+                  slug[0]?.toLowerCase() || ""
+                ) &&
+                totalItems > 0 && (
+                  <span className="ml-2">
+                    ({tersediaCount} tersedia, {terjualCount} terjual)
+                  </span>
+                )}
               {totalPages > 1 && (
                 <span className="ml-2">
                   - Halaman {currentPage} dari {totalPages}
@@ -186,11 +198,14 @@ export default async function Page({ params, searchParams }: PageProps) {
               )}
             </p>
             {/* Info prioritas status */}
-            {(slug.length === 0 || slug.length === 3) && totalItems > 0 && tersediaCount > 0 && terjualCount > 0 && (
-              <p className="text-xs text-green-600 mt-1">
-                ✓ Mobil tersedia ditampilkan terlebih dahulu
-              </p>
-            )}
+            {(slug.length === 0 || slug.length === 3) &&
+              totalItems > 0 &&
+              tersediaCount > 0 &&
+              terjualCount > 0 && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Mobil tersedia ditampilkan terlebih dahulu
+                </p>
+              )}
           </div>
         </div>
 
@@ -228,20 +243,22 @@ export default async function Page({ params, searchParams }: PageProps) {
             <div className="text-center py-12 max-w-md">
               <div className="text-6xl mb-4">🚗</div>
               <h3 className="text-xl font-semibold text-gray-700 mb-2">
-                {pageTitle.includes("Tidak Ditemukan") || pageTitle.includes("Kesalahan") || pageTitle.includes("Tidak Valid") 
-                  ? pageTitle 
-                  : "Tidak ada mobil yang ditemukan"
-                }
+                {pageTitle.includes("Tidak Ditemukan") ||
+                pageTitle.includes("Kesalahan") ||
+                pageTitle.includes("Tidak Valid")
+                  ? pageTitle
+                  : "Tidak ada mobil yang ditemukan"}
               </h3>
               <p className="text-gray-500 mb-6">
-                {pageTitle.includes("Tidak Ditemukan") || pageTitle.includes("Kesalahan") || pageTitle.includes("Tidak Valid")
+                {pageTitle.includes("Tidak Ditemukan") ||
+                pageTitle.includes("Kesalahan") ||
+                pageTitle.includes("Tidak Valid")
                   ? "Periksa kembali URL atau coba navigasi dari menu utama"
-                  : "Coba ubah filter pencarian atau kembali ke halaman utama untuk melihat semua mobil"
-                }
+                  : "Coba ubah filter pencarian atau kembali ke halaman utama untuk melihat semua mobil"}
               </p>
               <div className="space-y-3">
-                <Link 
-                  href="/mobil" 
+                <Link
+                  href="/mobil"
                   className="inline-block px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
                 >
                   Lihat Semua Mobil
@@ -249,8 +266,8 @@ export default async function Page({ params, searchParams }: PageProps) {
                 {showSearchFilter && (
                   <>
                     <br />
-                    <Link 
-                      href="/mobil/tersedia" 
+                    <Link
+                      href="/mobil/tersedia"
                       className="inline-block px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm"
                     >
                       Mobil Tersedia

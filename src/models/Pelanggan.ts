@@ -34,10 +34,5 @@ const PelangganSchema = new Schema(
   }
 );
 
-// Index untuk performa
-PelangganSchema.index({ noHp: 1 });
-PelangganSchema.index({ status: 1 });
-PelangganSchema.index({ lastActivity: -1 });
-
 const Pelanggan = models.Pelanggan || model("Pelanggan", PelangganSchema);
 export default Pelanggan;

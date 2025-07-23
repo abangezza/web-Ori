@@ -1,14 +1,14 @@
 // src/app/(admin)/login/page.tsx
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { signIn } from 'next-auth/react';
-import Image from 'next/image';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import Image from "next/image";
 
 export default function LoginAdmin() {
   const router = useRouter();
-  const [form, setForm] = useState({ username: '', password: '' });
+  const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -17,7 +17,7 @@ export default function LoginAdmin() {
     setIsLoading(true);
     setError(null);
 
-    const res = await signIn('credentials', {
+    const res = await signIn("credentials", {
       redirect: false,
       username: form.username,
       password: form.password,
@@ -27,9 +27,9 @@ export default function LoginAdmin() {
 
     if (res?.ok) {
       router.refresh(); // refresh session
-      router.push('/dashboard');
+      router.push("/dashboard");
     } else {
-      setError('Login gagal. Username atau password salah.');
+      setError("Login gagal. Username atau password salah.");
     }
   };
 
@@ -60,7 +60,10 @@ export default function LoginAdmin() {
           )}
           <form className="w-full max-w-sm space-y-6" onSubmit={handleLogin}>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-slate-600 mb-1">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-slate-600 mb-1"
+              >
                 Username
               </label>
               <input
@@ -74,7 +77,10 @@ export default function LoginAdmin() {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-600 mb-1">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-slate-600 mb-1"
+              >
                 Password
               </label>
               <input
@@ -92,7 +98,7 @@ export default function LoginAdmin() {
               disabled={isLoading}
               className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-amber-400 hover:text-black transition-all duration-300 cursor-pointer disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Memproses...' : 'Log In'}
+              {isLoading ? "Memproses..." : "Log In"}
             </button>
           </form>
         </div>

@@ -1,7 +1,7 @@
 // src/components/NotFound.tsx
-import React from 'react';
-import Link from 'next/link';
-import { Home, ArrowLeft, Search, Car } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { Home, ArrowLeft, Search, Car } from "lucide-react";
 
 interface NotFoundProps {
   title?: string;
@@ -14,7 +14,7 @@ const NotFound: React.FC<NotFoundProps> = ({
   title = "Halaman Tidak Ditemukan",
   description = "Maaf, halaman yang Anda cari tidak dapat ditemukan. Mungkin halaman tersebut telah dipindahkan atau dihapus.",
   showSearchButton = true,
-  customHomeLink = "/"
+  customHomeLink = "/",
 }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
@@ -36,14 +36,14 @@ const NotFound: React.FC<NotFoundProps> = ({
           <h1 className="text-3xl md:text-4xl font-bold text-gray-800 leading-tight">
             {title}
           </h1>
-          
+
           <p className="text-lg text-gray-600 leading-relaxed max-w-lg mx-auto">
             {description}
           </p>
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
-            <Link 
+            <Link
               href={customHomeLink}
               className="group inline-flex items-center gap-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
@@ -51,7 +51,7 @@ const NotFound: React.FC<NotFoundProps> = ({
               Kembali ke Beranda
             </Link>
 
-            <Link 
+            <Link
               href="/mobil"
               className="group inline-flex items-center gap-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
             >
@@ -60,7 +60,7 @@ const NotFound: React.FC<NotFoundProps> = ({
             </Link>
 
             {showSearchButton && (
-              <Link 
+              <Link
                 href="/mobil/tersedia"
                 className="group inline-flex items-center gap-3 bg-green-500 hover:bg-green-600 text-white font-semibold px-8 py-4 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
@@ -81,38 +81,48 @@ const NotFound: React.FC<NotFoundProps> = ({
                   <Home className="w-4 h-4 text-orange-600" />
                 </div>
                 <div>
-                  <h4 className="font-medium text-gray-800">Kembali ke Beranda</h4>
-                  <p className="text-sm text-gray-600">Mulai dari halaman utama</p>
+                  <h4 className="font-medium text-gray-800">
+                    Kembali ke Beranda
+                  </h4>
+                  <p className="text-sm text-gray-600">
+                    Mulai dari halaman utama
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="bg-blue-100 rounded-full p-2 flex-shrink-0">
                   <Car className="w-4 h-4 text-blue-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-800">Jelajahi Mobil</h4>
-                  <p className="text-sm text-gray-600">Lihat koleksi mobil kami</p>
+                  <p className="text-sm text-gray-600">
+                    Lihat koleksi mobil kami
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="bg-green-100 rounded-full p-2 flex-shrink-0">
                   <Search className="w-4 h-4 text-green-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-800">Cari Mobil</h4>
-                  <p className="text-sm text-gray-600">Temukan mobil yang tersedia</p>
+                  <p className="text-sm text-gray-600">
+                    Temukan mobil yang tersedia
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <div className="bg-purple-100 rounded-full p-2 flex-shrink-0">
                   <ArrowLeft className="w-4 h-4 text-purple-600" />
                 </div>
                 <div>
                   <h4 className="font-medium text-gray-800">Kembali</h4>
-                  <p className="text-sm text-gray-600">Gunakan tombol back browser</p>
+                  <p className="text-sm text-gray-600">
+                    Gunakan tombol back browser
+                  </p>
                 </div>
               </div>
             </div>
@@ -122,12 +132,15 @@ const NotFound: React.FC<NotFoundProps> = ({
           <div className="mt-8 flex items-center justify-center gap-3 text-gray-500">
             <div className="bg-black rounded-full p-2">
               <img
-                src="/Lambang bulat.png"
+                src="/lambang bulat.png"
                 alt="Radja Auto Car"
                 className="w-6 h-6"
               />
             </div>
-            <span className="font-medium text-lg" style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}>
+            <span
+              className="font-medium text-lg"
+              style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
+            >
               Radja Auto Car
             </span>
           </div>

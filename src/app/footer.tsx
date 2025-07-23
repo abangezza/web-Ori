@@ -1,7 +1,17 @@
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Trophy, Car, Percent, Scale, whatsapp ,Facebook, Linkedin, Twitter, Instagram } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  Trophy,
+  Car,
+  Percent,
+  Scale,
+  whatsapp,
+  Facebook,
+  Linkedin,
+  Twitter,
+  Instagram,
+} from "lucide-react";
 
 const Footer = () => {
   return (
@@ -41,7 +51,9 @@ const Footer = () => {
               <Percent className="w-12 h-12 text-orange-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2">Free Antar (Jabodetabek)</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Free Antar (Jabodetabek)
+              </h3>
               <p className="text-gray-400 text-sm">Siap antar sampai rumah</p>
             </div>
           </div>
@@ -52,7 +64,9 @@ const Footer = () => {
               <Scale className="w-12 h-12 text-orange-500" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2">Pengajuan Harga Kredit</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                Pengajuan Harga Kredit
+              </h3>
               <p className="text-gray-400 text-sm">Ajukan DP & Angsuran</p>
             </div>
           </div>
@@ -62,30 +76,47 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
           {/* What's on Radja Auto Car */}
           <div>
-            <h3 className="text-xl font-semibold mb-6">What's on Radja Auto Car?</h3>
+            <h3 className="text-xl font-semibold mb-6">
+              What's on Radja Auto Car?
+            </h3>
             <ul className="space-y-3">
               <li>
-                <Link href="/mobil/tersedia" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/tersedia"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Unit Tersedia
                 </Link>
               </li>
               <li>
-                <Link href="/mobil" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   List Seluruh Unit
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/terjual" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/terjual"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Unit Terjual
                 </Link>
               </li>
               <li>
-                <Link href="/carabeli" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/carabeli"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Cara Beli
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/about"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   About Us
                 </Link>
               </li>
@@ -97,32 +128,50 @@ const Footer = () => {
             <h3 className="text-xl font-semibold mb-6">Popular used car</h3>
             <ul className="space-y-3">
               <li>
-                <Link href="/mobil/NISSAN/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/NISSAN/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Nissan
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/HONDA/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/HONDA/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Honda
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/SUZUKI/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/SUZUKI/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Suzuki
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/HYUNDAI/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/HYUNDAI/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Hyundai
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/TOYOTA/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/TOYOTA/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   Toyota
                 </Link>
               </li>
               <li>
-                <Link href="/mobil/BYD/all/all" className="text-gray-400 hover:text-white transition-colors">
+                <Link
+                  href="/mobil/BYD/all/all"
+                  className="text-gray-400 hover:text-white transition-colors"
+                >
                   BYD
                 </Link>
               </li>
@@ -139,7 +188,7 @@ const Footer = () => {
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center">
                 <Image
-                  src="/Lambang bulat.png"
+                  src="/lambang bulat.png"
                   alt="Radja Auto Car"
                   width={32}
                   height={32}

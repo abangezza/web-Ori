@@ -35,6 +35,8 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
               src="/lambang bulat.png"
               alt="Radja Auto Car"
               className="w-12 h-12"
+              width={32}
+              height={32}
             />
           </div>
           <h1

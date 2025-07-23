@@ -1,3 +1,4 @@
+// src/app/api/mobil/route.ts - IMPROVED VERSION WITH BETTER ERROR HANDLING
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/conn";
 import Mobil from "@/models/Mobil";
@@ -9,9 +10,11 @@ import { existsSync } from "fs";
 
 // Debugging helper
 function logDebug(message: string, data?: any) {
-  if (process.env.NODE_ENV === "development") {
-    console.log(`[DEBUG] ${message}`, data || "");
-  }
+  console.log(`[DEBUG ${new Date().toISOString()}] ${message}`, data || "");
+}
+
+function logError(message: string, error?: any) {
+  console.error(`[ERROR ${new Date().toISOString()}] ${message}`, error || "");
 }
 
 // POST: Tambah mobil baru
@@ -19,14 +22,20 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    logDebug("POST /api/mobil started");
+    logDebug("=== POST /api/mobil started ===");
+    logDebug("Environment check:", {
+      nodeEnv: process.env.NODE_ENV,
+      mongoUri: process.env.MONGODB_URI ? "✓ Set" : "✗ Not set",
+      nextAuthSecret: process.env.NEXTAUTH_SECRET ? "✓ Set" : "✗ Not set",
+    });
 
     // Test database connection first
     try {
+      logDebug("Attempting MongoDB connection...");
       await connectMongo();
-      logDebug("MongoDB connected successfully");
+      logDebug("✓ MongoDB connected successfully");
     } catch (dbError) {
-      console.error("MongoDB connection failed:", dbError);
+      logError("✗ MongoDB connection failed:", dbError);
       return NextResponse.json(
         {
           success: false,
@@ -34,9 +43,15 @@ export async function POST(request: NextRequest) {
           error:
             process.env.NODE_ENV === "development"
               ? String(dbError)
-              : "Database error",
+              : "Database connection error",
+          timestamp: new Date().toISOString(),
         },
-        { status: 500 }
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
@@ -46,16 +61,18 @@ export async function POST(request: NextRequest) {
     let files: File[];
 
     try {
+      logDebug("Parsing form data...");
       formData = await request.formData();
       fields = Object.fromEntries(formData.entries());
       files = formData.getAll("fotos") as File[];
 
-      logDebug("Form data parsed", {
+      logDebug("✓ Form data parsed", {
         fieldCount: Object.keys(fields).length,
         fileCount: files.length,
+        fields: Object.keys(fields),
       });
     } catch (parseError) {
-      console.error("Form data parsing failed:", parseError);
+      logError("✗ Form data parsing failed:", parseError);
       return NextResponse.json(
         {
           success: false,
@@ -63,9 +80,15 @@ export async function POST(request: NextRequest) {
           error:
             process.env.NODE_ENV === "development"
               ? String(parseError)
-              : "Parse error",
+              : "Invalid form data",
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
@@ -99,27 +122,39 @@ export async function POST(request: NextRequest) {
     );
 
     if (missingFields.length > 0) {
-      logDebug("Missing required fields", missingFields);
+      logError("✗ Missing required fields:", missingFields);
       return NextResponse.json(
         {
           success: false,
           message: `Missing required fields: ${missingFields.join(", ")}`,
           missingFields,
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
     // Validate files
     if (!files || files.length < 6 || files.length > 10) {
-      logDebug("File validation failed", { fileCount: files?.length || 0 });
+      logError("✗ File validation failed", { fileCount: files?.length || 0 });
       return NextResponse.json(
         {
           success: false,
           message: "Wajib upload minimal 6 foto dan maksimal 10 foto",
           receivedFiles: files?.length || 0,
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
@@ -128,17 +163,28 @@ export async function POST(request: NextRequest) {
       const file = files[i];
 
       if (!file.type.startsWith("image/")) {
+        logError(`✗ File ${i + 1} is not an image:`, file.type);
         return NextResponse.json(
           {
             success: false,
             message: `File ${i + 1} bukan gambar: ${file.type}`,
             fileType: file.type,
+            timestamp: new Date().toISOString(),
           },
-          { status: 400 }
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
       }
 
       if (file.size > 5 * 1024 * 1024) {
+        logError(
+          `✗ File ${i + 1} too large:`,
+          `${(file.size / 1024 / 1024).toFixed(2)}MB`
+        );
         return NextResponse.json(
           {
             success: false,
@@ -148,22 +194,32 @@ export async function POST(request: NextRequest) {
               1024
             ).toFixed(2)}MB`,
             maxSize: "5MB",
+            timestamp: new Date().toISOString(),
           },
-          { status: 400 }
+          {
+            status: 400,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
       }
     }
 
     // Create uploads directory with proper error handling
     const uploadsDir = path.join(process.cwd(), "public", "uploads");
+    logDebug("Uploads directory path:", uploadsDir);
 
     try {
       if (!existsSync(uploadsDir)) {
+        logDebug("Creating uploads directory...");
         await mkdir(uploadsDir, { recursive: true });
-        logDebug("Created uploads directory", uploadsDir);
+        logDebug("✓ Created uploads directory");
+      } else {
+        logDebug("✓ Uploads directory exists");
       }
     } catch (dirError) {
-      console.error("Failed to create uploads directory:", dirError);
+      logError("✗ Failed to create uploads directory:", dirError);
       return NextResponse.json(
         {
           success: false,
@@ -172,18 +228,32 @@ export async function POST(request: NextRequest) {
             process.env.NODE_ENV === "development"
               ? String(dirError)
               : "File system error",
+          path: uploadsDir,
+          timestamp: new Date().toISOString(),
         },
-        { status: 500 }
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
     // Save files with individual error handling
     const savedFileNames: string[] = [];
+    logDebug("Starting file upload process...");
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
 
       try {
+        logDebug(`Processing file ${i + 1}/${files.length}:`, {
+          name: file.name,
+          size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+          type: file.type,
+        });
+
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
@@ -194,16 +264,17 @@ export async function POST(request: NextRequest) {
         await writeFile(filePath, buffer);
         savedFileNames.push(fileName);
 
-        logDebug(`Saved file ${i + 1}`, fileName);
+        logDebug(`✓ Saved file ${i + 1}:`, fileName);
       } catch (fileError) {
-        console.error(`Error saving file ${i + 1}:`, fileError);
+        logError(`✗ Error saving file ${i + 1}:`, fileError);
 
         // Clean up any successfully saved files
         for (const savedFile of savedFileNames) {
           try {
             await unlink(path.join(uploadsDir, savedFile));
+            logDebug("Cleaned up file:", savedFile);
           } catch (cleanupError) {
-            console.error("Cleanup error:", cleanupError);
+            logError("Cleanup error:", cleanupError);
           }
         }
 
@@ -215,16 +286,25 @@ export async function POST(request: NextRequest) {
               process.env.NODE_ENV === "development"
                 ? String(fileError)
                 : "File save error",
+            timestamp: new Date().toISOString(),
           },
-          { status: 500 }
+          {
+            status: 500,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
         );
       }
     }
+
+    logDebug("✓ All files uploaded successfully");
 
     // Prepare data for database with type conversion
     let mobilData: any;
 
     try {
+      logDebug("Preparing data for database...");
       mobilData = {
         merek: String(fields.merek).trim(),
         tipe: String(fields.tipe).trim(),
@@ -259,14 +339,14 @@ export async function POST(request: NextRequest) {
         throw new Error("Invalid numeric values");
       }
 
-      logDebug("Mobil data prepared", {
+      logDebug("✓ Data prepared for database", {
         merek: mobilData.merek,
         tipe: mobilData.tipe,
         tahun: mobilData.tahun,
         fotosCount: mobilData.fotos.length,
       });
     } catch (dataError) {
-      console.error("Data preparation failed:", dataError);
+      logError("✗ Data preparation failed:", dataError);
       return NextResponse.json(
         {
           success: false,
@@ -275,8 +355,14 @@ export async function POST(request: NextRequest) {
             process.env.NODE_ENV === "development"
               ? String(dataError)
               : "Data validation error",
+          timestamp: new Date().toISOString(),
         },
-        { status: 400 }
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
@@ -284,23 +370,25 @@ export async function POST(request: NextRequest) {
     let savedMobil: any;
 
     try {
+      logDebug("Saving to database...");
       const newMobil = new Mobil(mobilData);
       savedMobil = await newMobil.save();
 
-      logDebug("Mobil saved to database", {
+      logDebug("✓ Mobil saved to database", {
         id: savedMobil._id,
         merek: savedMobil.merek,
         tipe: savedMobil.tipe,
       });
     } catch (dbSaveError) {
-      console.error("Database save failed:", dbSaveError);
+      logError("✗ Database save failed:", dbSaveError);
 
       // Clean up uploaded files if database save fails
       for (const fileName of savedFileNames) {
         try {
           await unlink(path.join(uploadsDir, fileName));
+          logDebug("Cleaned up file after DB error:", fileName);
         } catch (cleanupError) {
-          console.error("File cleanup error:", cleanupError);
+          logError("File cleanup error:", cleanupError);
         }
       }
 
@@ -312,13 +400,19 @@ export async function POST(request: NextRequest) {
             process.env.NODE_ENV === "development"
               ? String(dbSaveError)
               : "Database save error",
+          timestamp: new Date().toISOString(),
         },
-        { status: 500 }
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
       );
     }
 
     const processingTime = Date.now() - startTime;
-    logDebug(`Request completed in ${processingTime}ms`);
+    logDebug(`✓ Request completed successfully in ${processingTime}ms`);
 
     return NextResponse.json(
       {
@@ -332,12 +426,18 @@ export async function POST(request: NextRequest) {
           fotosCount: savedMobil.fotos.length,
         },
         processingTime: `${processingTime}ms`,
+        timestamp: new Date().toISOString(),
       },
-      { status: 201 }
+      {
+        status: 201,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    console.error("Unhandled error in POST /api/mobil:", error);
+    logError("✗ Unhandled error in POST /api/mobil:", error);
 
     return NextResponse.json(
       {
@@ -349,8 +449,19 @@ export async function POST(request: NextRequest) {
             : "Server error",
         processingTime: `${processingTime}ms`,
         timestamp: new Date().toISOString(),
+        stack:
+          process.env.NODE_ENV === "development"
+            ? error instanceof Error
+              ? error.stack
+              : undefined
+            : undefined,
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }
@@ -358,20 +469,58 @@ export async function POST(request: NextRequest) {
 // GET: Test endpoint
 export async function GET() {
   try {
-    logDebug("GET /api/mobil called");
+    logDebug("=== GET /api/mobil called ===");
 
-    await connectMongo();
+    // Test database connection
+    try {
+      await connectMongo();
+      logDebug("✓ MongoDB connected for GET request");
+    } catch (dbError) {
+      logError("✗ MongoDB connection failed in GET:", dbError);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Database connection failed",
+          error:
+            process.env.NODE_ENV === "development"
+              ? String(dbError)
+              : "Database error",
+          timestamp: new Date().toISOString(),
+        },
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
     const count = await Mobil.countDocuments();
+    logDebug("✓ Retrieved mobil count:", count);
 
-    return NextResponse.json({
-      success: true,
-      message: "API endpoint is working",
-      totalMobils: count,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        message: "API endpoint is working",
+        totalMobils: count,
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV,
+        mongoStatus: "connected",
+        serverInfo: {
+          platform: process.platform,
+          nodeVersion: process.version,
+          memory: process.memoryUsage(),
+        },
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
   } catch (error) {
-    console.error("Error in GET /api/mobil:", error);
+    logError("✗ Error in GET /api/mobil:", error);
 
     return NextResponse.json(
       {
@@ -383,7 +532,12 @@ export async function GET() {
             : "Server error",
         timestamp: new Date().toISOString(),
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
   }
 }

@@ -192,31 +192,34 @@ const CarAdComponent: React.FC<CarAdComponentProps> = ({
           </div>
         </div>
 
-        {/* Center - Main Content */}
-        <div className="flex-1 flex flex-col justify-center items-center text-center px-4">
-          {/* Car Title */}
-          <h1 className="text-3xl lg:text-4xl font-bold text-white mb-2 max-w-md">
-            {`${mobil.merek} ${mobil.tipe}`.toUpperCase()}
-          </h1>
+        {/* Center - Main Car Info in Overlay */}
+        <div className="flex-1 flex justify-center items-center relative">
+          {/* Car Info Card - Positioned over the car image */}
+          <div className="absolute top-20 bg-gray-800 bg-opacity-70 backdrop-blur-sm rounded-xl p-6 max-w-sm w-full mx-4 mt-20 mr-79">
+            {/* Car Title */}
+            <h1 className="text-2xl lg:text-3xl font-bold text-white mb-3 text-center">
+              {`${mobil.merek} ${mobil.tipe}`.toUpperCase()}
+            </h1>
 
-          {/* Description */}
-          {mobil.deskripsi && (
-            <p className="text-white text-sm mb-3 max-w-sm leading-relaxed opacity-90 bg-black bg-opacity-30 p-2 rounded">
-              {truncateDescription(mobil.deskripsi)}
-            </p>
-          )}
+            {/* Description */}
+            {mobil.deskripsi && (
+              <p className="text-white text-sm mb-4 leading-relaxed opacity-90 text-center">
+                {truncateDescription(mobil.deskripsi)}
+              </p>
+            )}
 
-          {/* Price */}
-          <div className="text-orange-400 text-xl lg:text-2xl font-bold mb-3">
-            Rp.{formatHarga(mobil.harga)}
+            {/* Price */}
+            <div className="text-orange-400 text-xl lg:text-2xl font-bold mb-4 text-center">
+              Rp.{formatHarga(mobil.harga)}
+            </div>
+
+            {/* Button */}
+            <Link href={`/detailmobilcs/${mobil._id}`}>
+              <button className="w-full bg-white text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
+                Lihat Detail
+              </button>
+            </Link>
           </div>
-
-          {/* Button */}
-          <Link href={`/detailmobilcs/${mobil._id}`}>
-            <button className="bg-white text-gray-800 px-6 py-2 rounded-lg font-semibold hover:bg-orange-500 hover:text-white transition-all duration-300 shadow-lg hover:shadow-xl">
-              Lihat Detail
-            </button>
-          </Link>
         </div>
 
         {/* Right Side - Empty space for balance */}

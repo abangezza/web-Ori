@@ -1,6 +1,6 @@
-// src/app/api/uploads/[...filename]/route.ts - IMPROVED FOR VPS
+// src/app/api/uploads/[...filename]/route.ts - SIMPLIFIED VERSION
 import { NextRequest, NextResponse } from "next/server";
-import { readFile, stat } from "fs/promises";
+import { readFile } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
 
@@ -8,196 +8,93 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { filename: string[] } }
 ) {
-  const startTime = Date.now();
-
   try {
-    // Join the filename array to handle nested paths
+    // Join filename parts
     const filename = params.filename.join("/");
 
-    console.log(`🖼️ Image request for: ${filename}`);
+    console.log(`🖼️ Image request: ${filename}`);
 
-    // Security: prevent path traversal attacks
-    if (
-      !filename ||
-      filename.includes("..") ||
-      filename.includes("\\") ||
-      filename.startsWith("/") ||
-      filename.includes("//")
-    ) {
-      console.log(`❌ Invalid filename blocked: ${filename}`);
+    // Basic security check
+    if (!filename || filename.includes("..") || filename.includes("\\")) {
+      console.log(`❌ Invalid filename: ${filename}`);
       return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
     }
 
-    // Multiple possible paths for VPS deployment
-    const possiblePaths = [
-      path.join(process.cwd(), "public", "uploads", filename),
-      path.join(process.cwd(), "uploads", filename),
-      path.join("/var/www/html/public/uploads", filename), // Common VPS path
-      path.join("/home/*/public_html/public/uploads", filename), // Alternative VPS path
-    ];
+    // Simple path resolution - just check the main uploads folder
+    const filePath = path.join(process.cwd(), "public", "uploads", filename);
 
-    let filePath = null;
-    let fileStats = null;
+    console.log(`📁 Checking path: ${filePath}`);
 
-    // Try each possible path
-    for (const testPath of possiblePaths) {
-      if (existsSync(testPath)) {
-        try {
-          fileStats = await stat(testPath);
-          if (fileStats.isFile()) {
-            filePath = testPath;
-            console.log(`✅ Found file at: ${testPath}`);
-            break;
-          }
-        } catch (statError) {
-          console.log(`⚠️ Could not stat file at ${testPath}:`, statError);
-          continue;
-        }
-      }
+    // Check if file exists
+    if (!existsSync(filePath)) {
+      console.log(`❌ File not found: ${filePath}`);
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
     }
 
-    // If file not found in any location
-    if (!filePath || !fileStats) {
-      console.log(`❌ File not found: ${filename}`);
-      console.log(`Searched in:`, possiblePaths);
+    // Read file
+    const fileBuffer = await readFile(filePath);
+    console.log(
+      `✅ File read successfully: ${filename} (${fileBuffer.length} bytes)`
+    );
 
-      // Return a placeholder image or 404
-      return new NextResponse(null, {
-        status: 404,
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-    }
-
-    // Read the file
-    let fileBuffer: Buffer;
-    try {
-      fileBuffer = await readFile(filePath);
-      console.log(
-        `📖 Successfully read file: ${filename} (${fileBuffer.length} bytes)`
-      );
-    } catch (readError) {
-      console.error(`❌ Error reading file ${filename}:`, readError);
-      return NextResponse.json(
-        { error: "Error reading file" },
-        { status: 500 }
-      );
-    }
-
-    // Determine content type based on file extension
+    // Get file extension for content type
     const ext = path.extname(filename).toLowerCase();
-    let contentType = "application/octet-stream";
+    let contentType = "image/jpeg"; // Default
 
     switch (ext) {
-      case ".jpg":
-      case ".jpeg":
-        contentType = "image/jpeg";
-        break;
       case ".png":
         contentType = "image/png";
-        break;
-      case ".gif":
-        contentType = "image/gif";
         break;
       case ".webp":
         contentType = "image/webp";
         break;
+      case ".gif":
+        contentType = "image/gif";
+        break;
       case ".svg":
         contentType = "image/svg+xml";
         break;
-      case ".bmp":
-        contentType = "image/bmp";
-        break;
-      case ".ico":
-        contentType = "image/x-icon";
-        break;
-      default:
-        contentType = "image/jpeg"; // default fallback
+      // Default is jpeg
     }
 
-    const processingTime = Date.now() - startTime;
-    console.log(
-      `✅ Serving image: ${filename} (${contentType}) in ${processingTime}ms`
-    );
-
-    // Return the file with proper headers
+    // Return file with basic headers
     return new NextResponse(fileBuffer, {
       status: 200,
       headers: {
         "Content-Type": contentType,
         "Content-Length": fileBuffer.length.toString(),
-        "Cache-Control": "public, max-age=31536000, immutable", // Cache for 1 year
-        ETag: `"${filename}-${fileStats.size}-${fileStats.mtime.getTime()}"`, // Better ETag
-        "Last-Modified": fileStats.mtime.toUTCString(),
-        "Accept-Ranges": "bytes",
-        // CORS headers for VPS
+        "Cache-Control": "public, max-age=86400", // 24 hours cache
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET",
-        "Access-Control-Allow-Headers": "Content-Type",
       },
     });
   } catch (error) {
-    const processingTime = Date.now() - startTime;
-    console.error(`❌ Error serving file after ${processingTime}ms:`, error);
+    console.error(`❌ Error serving file:`, error);
 
     return NextResponse.json(
       {
         error: "Internal server error",
-        filename: params.filename.join("/"),
-        timestamp: new Date().toISOString(),
+        message: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
   }
 }
 
-// Handle HEAD requests for file existence checks
+// Handle HEAD requests
 export async function HEAD(
   req: NextRequest,
   { params }: { params: { filename: string[] } }
 ) {
   try {
     const filename = params.filename.join("/");
+    const filePath = path.join(process.cwd(), "public", "uploads", filename);
 
-    // Security check
-    if (
-      !filename ||
-      filename.includes("..") ||
-      filename.includes("\\") ||
-      filename.startsWith("/")
-    ) {
-      return new NextResponse(null, { status: 400 });
+    if (existsSync(filePath)) {
+      return new NextResponse(null, { status: 200 });
+    } else {
+      return new NextResponse(null, { status: 404 });
     }
-
-    // Check if file exists in any of the possible paths
-    const possiblePaths = [
-      path.join(process.cwd(), "public", "uploads", filename),
-      path.join(process.cwd(), "uploads", filename),
-      path.join("/var/www/html/public/uploads", filename),
-    ];
-
-    for (const testPath of possiblePaths) {
-      if (existsSync(testPath)) {
-        const fileStats = await stat(testPath);
-        if (fileStats.isFile()) {
-          return new NextResponse(null, {
-            status: 200,
-            headers: {
-              "Content-Length": fileStats.size.toString(),
-              "Last-Modified": fileStats.mtime.toUTCString(),
-              ETag: `"${filename}-${
-                fileStats.size
-              }-${fileStats.mtime.getTime()}"`,
-            },
-          });
-        }
-      }
-    }
-
-    return new NextResponse(null, { status: 404 });
-  } catch (error) {
-    console.error("Error in HEAD request:", error);
+  } catch {
     return new NextResponse(null, { status: 500 });
   }
 }

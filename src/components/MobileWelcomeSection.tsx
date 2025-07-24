@@ -32,20 +32,13 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
         <div className="mb-8">
           <div className="bg-black rounded-full w-20 h-20 mx-auto mb-4 flex items-center justify-center shadow-2xl">
             <Image
-              src="/lambang bulat.png"
+              src="/Lambang.png"
               alt="Radja Auto Car"
               className="w-12 h-12"
               width={32}
               height={32}
             />
           </div>
-          <h1
-            className="text-3xl font-bold text-white mb-2"
-            style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
-          >
-            Radja Auto Car
-          </h1>
-          <div className="w-16 h-1 bg-orange-500 mx-auto rounded-full"></div>
         </div>
 
         {/* Welcome Message */}
@@ -54,42 +47,12 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
             Selamat Datang di
             <span className="block text-orange-400">Radja Auto Car</span>
           </h2>
+          <div className="w-30 h-1 bg-gray-400 mx-auto rounded-full"></div>
 
           <p className="text-lg text-gray-300 leading-relaxed max-w-md mx-auto">
             Temukan mobil impian Anda dengan koleksi terlengkap dan terpercaya.
             Kualitas terbaik, harga terjangkau, dan pelayanan prima.
           </p>
-        </div>
-
-        {/* Features */}
-        <div className="grid grid-cols-2 gap-4 mb-10 max-w-sm mx-auto">
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
-            <div className="text-2xl mb-2">🚗</div>
-            <div className="text-white font-semibold text-sm">
-              Mobil Berkualitas
-            </div>
-          </div>
-
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
-            <div className="text-2xl mb-2">💰</div>
-            <div className="text-white font-semibold text-sm">
-              Harga Terjangkau
-            </div>
-          </div>
-
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
-            <div className="text-2xl mb-2">🔧</div>
-            <div className="text-white font-semibold text-sm">
-              Service Terpercaya
-            </div>
-          </div>
-
-          <div className="bg-white bg-opacity-10 backdrop-blur-md rounded-xl p-4 border border-white border-opacity-20">
-            <div className="text-2xl mb-2">⭐</div>
-            <div className="text-white font-semibold text-sm">
-              Pelayanan Prima
-            </div>
-          </div>
         </div>
 
         {/* Call to Action */}

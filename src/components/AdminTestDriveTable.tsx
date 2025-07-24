@@ -190,6 +190,37 @@ const AdminTestDriveTable = () => {
     }
   };
 
+  // Calculate statistics
+  const calculateStats = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const stats = {
+      total: bookings.length,
+      today: 0,
+      active: 0,
+      expired: 0,
+    };
+
+    bookings.forEach((booking) => {
+      const testDate = new Date(booking.tanggalTest);
+      testDate.setHours(0, 0, 0, 0);
+
+      if (testDate < today) {
+        stats.expired++;
+      } else if (testDate.getTime() === today.getTime()) {
+        stats.today++;
+        stats.active++; // Today's bookings are also active
+      } else {
+        stats.active++;
+      }
+    });
+
+    return stats;
+  };
+
+  const stats = calculateStats();
+
   if (loading) {
     return (
       <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">
@@ -242,22 +273,41 @@ const AdminTestDriveTable = () => {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                Total: {filteredBookings.length} booking
+              {/* Stats Summary */}
+              <div className="flex flex-wrap gap-2 text-xs">
+                <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                  Total: {stats.total}
+                </div>
+                <div className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                  Aktif: {stats.active}
+                </div>
+                <div className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full font-medium">
+                  Hari Ini: {stats.today}
+                </div>
+                <div className="bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
+                  Expired: {stats.expired}
+                </div>
               </div>
               <div className="flex space-x-2">
                 <button
                   onClick={deleteExpiredBookings}
-                  disabled={deletingExpired}
+                  disabled={deletingExpired || stats.expired === 0}
                   className={`px-3 sm:px-4 py-2 rounded-lg text-white font-medium transition flex items-center gap-2 text-sm ${
-                    deletingExpired
+                    deletingExpired || stats.expired === 0
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-red-500 hover:bg-red-600"
                   }`}
+                  title={
+                    stats.expired === 0
+                      ? "Tidak ada booking expired"
+                      : `Hapus ${stats.expired} booking expired`
+                  }
                 >
                   <Trash2 className="w-4 h-4" />
                   <span className="hidden sm:inline">
-                    {deletingExpired ? "Menghapus..." : "Hapus Expired"}
+                    {deletingExpired
+                      ? "Menghapus..."
+                      : `Hapus Expired (${stats.expired})`}
                   </span>
                 </button>
                 <button

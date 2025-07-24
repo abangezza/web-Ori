@@ -1,4 +1,4 @@
-// src/components/editMobilForm.tsx
+// src/components/editMobilForm.tsx - FIXED VERSION
 "use client";
 
 import { useReducer, useState, useEffect } from "react";
@@ -22,11 +22,18 @@ const formReducer = (state: any, event: any) => {
     return event.payload;
   }
 
-  if (event.target.name === "fotos") {
+  // ✅ FIXED: Handle file input properly with null checks
+  if (event.target && event.target.name === "fotos") {
     return {
       ...state,
       fotos: event.target.files,
     };
+  }
+
+  // ✅ FIXED: Add null checks for event.target
+  if (!event.target || !event.target.name) {
+    console.warn("Event or target is missing:", event);
+    return state;
   }
 
   // Transform noRangka, noMesin, noPol to uppercase
@@ -37,13 +44,14 @@ const formReducer = (state: any, event: any) => {
   ) {
     return {
       ...state,
-      [event.target.name]: event.target.value.toUpperCase(),
+      [event.target.name]: event.target.value?.toUpperCase() || "",
     };
   }
 
   // Transform tipe to title case (first letter uppercase)
   if (event.target.name === "tipe") {
-    const titleCase = event.target.value
+    const value = event.target.value || "";
+    const titleCase = value
       .split(" ")
       .map(
         (word: string) =>
@@ -58,7 +66,7 @@ const formReducer = (state: any, event: any) => {
 
   return {
     ...state,
-    [event.target.name]: event.target.value,
+    [event.target.name]: event.target.value || "",
   };
 };
 
@@ -182,6 +190,7 @@ export default function EditMobilForm({
     }
   }, [data]);
 
+  // ✅ FIXED: Handle drag events with proper error handling
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -192,18 +201,33 @@ export default function EditMobilForm({
     }
   };
 
+  // ✅ FIXED: Handle drop events with proper error handling
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const event = {
+
+    if (e.dataTransfer?.files && e.dataTransfer.files[0]) {
+      const mockEvent = {
         target: {
           name: "fotos",
           files: e.dataTransfer.files,
         },
       };
-      setFormData(event);
+      setFormData(mockEvent);
+    }
+  };
+
+  // ✅ FIXED: Handle file input change with proper error handling
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target?.files) {
+      const mockEvent = {
+        target: {
+          name: "fotos",
+          files: e.target.files,
+        },
+      };
+      setFormData(mockEvent);
     }
   };
 
@@ -222,6 +246,8 @@ export default function EditMobilForm({
     const currentPhotos = data.fotos?.length || 0;
     const newPhotos = formData.fotos?.length || 0;
 
+    console.log("Photo validation:", { currentPhotos, newPhotos });
+
     if (newPhotos > 0) {
       // Validate new photos (max 10 new photos at once)
       if (newPhotos > 10) {
@@ -233,28 +259,36 @@ export default function EditMobilForm({
         return;
       }
 
-      // Validate individual files
-      for (let i = 0; i < formData.fotos.length; i++) {
-        const file = formData.fotos[i];
+      // ✅ FIXED: Add null check before iterating files
+      if (formData.fotos && formData.fotos.length > 0) {
+        // Validate individual files
+        for (let i = 0; i < formData.fotos.length; i++) {
+          const file = formData.fotos[i];
 
-        // Validate file type
-        if (!file.type.startsWith("image/")) {
-          setNotif({
-            message: "Semua file harus berupa gambar",
-            type: "error",
-          });
-          setIsSubmitting(false);
-          return;
-        }
+          if (!file) {
+            console.warn(`File at index ${i} is null or undefined`);
+            continue;
+          }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          setNotif({
-            message: "Ukuran file maksimal 5MB per foto",
-            type: "error",
-          });
-          setIsSubmitting(false);
-          return;
+          // Validate file type
+          if (!file.type?.startsWith("image/")) {
+            setNotif({
+              message: "Semua file harus berupa gambar",
+              type: "error",
+            });
+            setIsSubmitting(false);
+            return;
+          }
+
+          // Validate file size (max 5MB)
+          if (file.size > 5 * 1024 * 1024) {
+            setNotif({
+              message: "Ukuran file maksimal 5MB per foto",
+              type: "error",
+            });
+            setIsSubmitting(false);
+            return;
+          }
         }
       }
     }
@@ -263,7 +297,11 @@ export default function EditMobilForm({
 
     // Add all form data except photos
     for (const key in formData) {
-      if (key !== "fotos") {
+      if (
+        key !== "fotos" &&
+        formData[key] !== undefined &&
+        formData[key] !== null
+      ) {
         dataToSend.append(key, formData[key]);
       }
     }
@@ -272,7 +310,9 @@ export default function EditMobilForm({
     if (formData.fotos && formData.fotos.length > 0) {
       for (let i = 0; i < formData.fotos.length; i++) {
         const file = formData.fotos[i];
-        dataToSend.append("fotos", file);
+        if (file) {
+          dataToSend.append("fotos", file);
+        }
       }
       console.log(`Uploading ${formData.fotos.length} new photos`);
     }
@@ -287,10 +327,12 @@ export default function EditMobilForm({
       if (res.ok && result.success) {
         setNotif({ message: "Mobil berhasil diupdate", type: "success" });
 
-        // Reset file input
+        // Reset file input with proper null check
+        const updatedFormData = { ...formData };
+        delete updatedFormData.fotos;
         setFormData({
-          ...formData,
-          fotos: null,
+          type: "INITIALIZE",
+          payload: updatedFormData,
         });
 
         // Close modal after success
@@ -311,6 +353,17 @@ export default function EditMobilForm({
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // ✅ FIXED: Safe input change handler
+  const handleInputChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    if (e.target) {
+      setFormData(e);
     }
   };
 
@@ -361,11 +414,13 @@ export default function EditMobilForm({
                   <select
                     name="merek"
                     value={formData.merek || ""}
-                    onChange={setFormData}
+                    onChange={handleInputChange}
                     className={selectClassName}
                     required
                   >
-                    <option value="{formData.merek}">{formData.merek}</option>
+                    <option value={formData.merek || ""}>
+                      {formData.merek || "Pilih Merek"}
+                    </option>
                     {merekOptions.map((merek) => (
                       <option key={merek} value={merek}>
                         {merek}
@@ -395,7 +450,7 @@ export default function EditMobilForm({
                   type="text"
                   placeholder="Contoh: Avanza, Civic, Swift"
                   value={formData.tipe || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -410,7 +465,7 @@ export default function EditMobilForm({
                   min="1900"
                   max={new Date().getFullYear()}
                   value={formData.tahun || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -422,7 +477,7 @@ export default function EditMobilForm({
                   <select
                     name="warna"
                     value={formData.warna || ""}
-                    onChange={setFormData}
+                    onChange={handleInputChange}
                     className={selectClassName}
                     required
                   >
@@ -455,7 +510,7 @@ export default function EditMobilForm({
                   <select
                     name="bahan_bakar"
                     value={formData.bahan_bakar || ""}
-                    onChange={setFormData}
+                    onChange={handleInputChange}
                     className={selectClassName}
                     required
                   >
@@ -488,13 +543,11 @@ export default function EditMobilForm({
                   <select
                     name="transmisi"
                     value={formData.transmisi || ""}
-                    onChange={setFormData}
+                    onChange={handleInputChange}
                     className={selectClassName}
                     required
                   >
-                    <option value="{formData.transmisi}">
-                      {formData.transmisi}
-                    </option>
+                    <option value="">Pilih Transmisi</option>
                     <option value="Manual">Manual</option>
                     <option value="Automatic">Automatic</option>
                     <option value="Triptonic">Triptonic</option>
@@ -535,7 +588,7 @@ export default function EditMobilForm({
                   min="50"
                   max="10000"
                   value={formData.kapasitas_mesin || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -548,7 +601,7 @@ export default function EditMobilForm({
                   type="text"
                   placeholder="Contoh: 50,000 km"
                   value={formData.kilometer || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -561,7 +614,7 @@ export default function EditMobilForm({
                   type="text"
                   placeholder="Contoh: B 1234 XYZ"
                   value={formData.noPol || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -574,7 +627,7 @@ export default function EditMobilForm({
                   type="text"
                   placeholder="Nomor rangka kendaraan"
                   value={formData.noRangka || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -587,7 +640,7 @@ export default function EditMobilForm({
                   type="text"
                   placeholder="Nomor mesin kendaraan"
                   value={formData.noMesin || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -599,7 +652,7 @@ export default function EditMobilForm({
                   type="date"
                   name="pajak"
                   value={formData.pajak || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -624,7 +677,7 @@ export default function EditMobilForm({
                   placeholder="Harga dalam rupiah"
                   min="0"
                   value={formData.harga || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -638,7 +691,7 @@ export default function EditMobilForm({
                   placeholder="DP dalam rupiah"
                   min="0"
                   value={formData.dp || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -652,7 +705,7 @@ export default function EditMobilForm({
                   placeholder="Angsuran per bulan"
                   min="0"
                   value={formData.angsuran_4_thn || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -666,7 +719,7 @@ export default function EditMobilForm({
                   placeholder="Angsuran per bulan"
                   min="0"
                   value={formData.angsuran_5_tahun || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   className={inputClassName}
                   required
                 />
@@ -691,7 +744,7 @@ export default function EditMobilForm({
                       name={name}
                       value={formData[name] || ""}
                       className={selectClassName}
-                      onChange={setFormData}
+                      onChange={handleInputChange}
                       required
                     >
                       <option value="">Pilih status {name}</option>
@@ -731,7 +784,7 @@ export default function EditMobilForm({
                 <textarea
                   name="deskripsi"
                   value={formData.deskripsi || ""}
-                  onChange={setFormData}
+                  onChange={handleInputChange}
                   rows={4}
                   className={inputClassName}
                   placeholder="Jelaskan kondisi kendaraan, fitur khusus, atau informasi penting lainnya..."
@@ -748,7 +801,7 @@ export default function EditMobilForm({
                       name="status"
                       value="tersedia"
                       checked={formData.status === "tersedia"}
-                      onChange={setFormData}
+                      onChange={handleInputChange}
                       className="w-4 h-4 text-blue-600 focus:ring-blue-500"
                       required
                     />
@@ -762,7 +815,7 @@ export default function EditMobilForm({
                       name="status"
                       value="terjual"
                       checked={formData.status === "terjual"}
-                      onChange={setFormData}
+                      onChange={handleInputChange}
                       className="w-4 h-4 text-red-600 focus:ring-red-500"
                       required
                     />
@@ -775,7 +828,7 @@ export default function EditMobilForm({
             </div>
           </div>
 
-          {/* Upload Foto */}
+          {/* Upload Foto - FIXED VERSION */}
           <div className="mb-16">
             <h2 className="text-3xl font-bold text-gray-900 mb-10 flex items-center">
               <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold mr-4">
@@ -845,7 +898,7 @@ export default function EditMobilForm({
                 multiple
                 className="hidden"
                 id="foto-upload"
-                onChange={setFormData}
+                onChange={handleFileChange}
               />
               <label
                 htmlFor="foto-upload"
@@ -853,7 +906,7 @@ export default function EditMobilForm({
               >
                 Tambah Foto Baru
               </label>
-              {formData.fotos && (
+              {formData.fotos && formData.fotos.length > 0 && (
                 <div className="mt-6 text-lg text-gray-600">
                   {formData.fotos.length} foto baru akan ditambahkan
                   <br />

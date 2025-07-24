@@ -54,17 +54,22 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
   const goToPage = (page: number) => {
     setCurrentPage(page);
 
-    // Scroll ke paling atas halaman
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    // Multiple approaches to ensure scroll to top works
 
-    // Alternative: Jika ingin scroll ke bagian atas section saja (uncomment baris di bawah dan comment yang di atas)
-    // document.getElementById("available-cars-section")?.scrollIntoView({
-    //   behavior: "smooth",
-    //   block: "start",
-    // });
+    // Method 1: Immediate scroll to top
+    window.scrollTo(0, 0);
+
+    // Method 2: Smooth scroll with timeout to ensure it works after state update
+    setTimeout(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }, 100);
+
+    // Method 3: Scroll to top of document
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   };
 
   const goToPrevious = () => {

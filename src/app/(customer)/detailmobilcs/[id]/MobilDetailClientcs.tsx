@@ -125,7 +125,7 @@ export default function MobilDetailClient({ data }: MobilDetailClientProps) {
   const mobilName = `${data.merek} ${data.tipe} ${data.tahun}`;
 
   return (
-    <div className="max-w-8xl mx-auto mt-25">
+    <div className="max-w-8xl mx-auto mt-20">
       {/* Photo Accordion - Using the new component */}
       <MobilImageAccordion
         fotos={data.fotos}

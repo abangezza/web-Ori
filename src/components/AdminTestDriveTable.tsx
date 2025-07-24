@@ -45,6 +45,14 @@ const AdminTestDriveTable = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [deletingExpired, setDeletingExpired] = useState(false);
 
+  // State untuk menyimpan statistik
+  const [stats, setStats] = useState({
+    total: 0,
+    today: 0,
+    active: 0,
+    expired: 0,
+  });
+
   // Fetch data booking test drive
   useEffect(() => {
     fetchBookings();
@@ -73,6 +81,11 @@ const AdminTestDriveTable = () => {
     }
   }, [bookings, searchTerm]);
 
+  // Hitung statistik ketika data bookings berubah
+  useEffect(() => {
+    calculateStats();
+  }, [bookings]);
+
   const fetchBookings = async () => {
     try {
       setLoading(true);
@@ -89,6 +102,35 @@ const AdminTestDriveTable = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Calculate statistics - PERBAIKAN UTAMA
+  const calculateStats = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const newStats = {
+      total: bookings.length,
+      today: 0,
+      active: 0,
+      expired: 0,
+    };
+
+    bookings.forEach((booking) => {
+      const testDate = new Date(booking.tanggalTest);
+      testDate.setHours(0, 0, 0, 0);
+
+      if (testDate < today) {
+        newStats.expired++;
+      } else if (testDate.getTime() === today.getTime()) {
+        newStats.today++;
+        newStats.active++; // Today's bookings are also active
+      } else {
+        newStats.active++;
+      }
+    });
+
+    setStats(newStats);
   };
 
   // Delete expired bookings
@@ -190,37 +232,6 @@ const AdminTestDriveTable = () => {
     }
   };
 
-  // Calculate statistics
-  const calculateStats = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const stats = {
-      total: bookings.length,
-      today: 0,
-      active: 0,
-      expired: 0,
-    };
-
-    bookings.forEach((booking) => {
-      const testDate = new Date(booking.tanggalTest);
-      testDate.setHours(0, 0, 0, 0);
-
-      if (testDate < today) {
-        stats.expired++;
-      } else if (testDate.getTime() === today.getTime()) {
-        stats.today++;
-        stats.active++; // Today's bookings are also active
-      } else {
-        stats.active++;
-      }
-    });
-
-    return stats;
-  };
-
-  const stats = calculateStats();
-
   if (loading) {
     return (
       <div className="w-full max-w-7xl mx-auto p-4 sm:p-6">
@@ -273,7 +284,7 @@ const AdminTestDriveTable = () => {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-              {/* Stats Summary */}
+              {/* Stats Summary - PERBAIKAN: Gunakan stats dari state */}
               <div className="flex flex-wrap gap-2 text-xs">
                 <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
                   Total: {stats.total}

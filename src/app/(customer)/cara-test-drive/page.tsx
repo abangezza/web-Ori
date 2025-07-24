@@ -68,16 +68,6 @@ const CaraTestDrivePage = () => {
       <section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="container mx-auto px-6 text-center">
           <div className="flex items-center justify-center mb-6">
-            <div className="bg-black rounded-full p-3 mr-4">
-              <Image
-                src="/lambang bulat.png"
-                alt="Radja Auto Car"
-                width={64} // 16 * 4 = 64px
-                height={64}
-                className="w-16 h-16"
-                unoptimized
-              />
-            </div>
             <h1 className="text-4xl font-bold">
               Cara Test Drive di Radja Auto Car
             </h1>

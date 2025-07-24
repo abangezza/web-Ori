@@ -31,7 +31,7 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
         {/* Logo/Brand */}
         {/* Logo/Brand */}
         <div className="mb-8">
-          <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center overflow-hidden rounded-md border border-gray-300 shadow">
+          <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center overflow-hidden rounded-md  shadow">
             <Image
               src="/Lambang.png"
               alt="Radja Auto Car"

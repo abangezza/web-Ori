@@ -1,46 +1,10 @@
-// src/app/api/mobil/[id]/route.ts
+// src/app/api/mobil/[id]/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from "next/server";
 import connectMongo from "@/lib/conn";
 import Mobil from "@/models/Mobil";
 import { writeFile, unlink, mkdir } from "fs/promises";
 import { existsSync } from "fs";
 import path from "path";
-
-// Untuk PATCH request (update status saja)
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await connectMongo();
-    const { status } = await req.json();
-
-    const updatedMobil = await Mobil.findByIdAndUpdate(
-      params.id,
-      { status },
-      { new: true }
-    );
-
-    if (!updatedMobil) {
-      return NextResponse.json(
-        { success: false, message: "Mobil tidak ditemukan" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Status mobil berhasil diupdate",
-      data: updatedMobil,
-    });
-  } catch (error) {
-    console.error("Error updating mobil status:", error);
-    return NextResponse.json(
-      { success: false, message: "Gagal mengupdate status mobil" },
-      { status: 500 }
-    );
-  }
-}
 
 // Untuk PUT request (update seluruh data termasuk foto)
 export async function PUT(
@@ -61,6 +25,11 @@ export async function PUT(
         { status: 404 }
       );
     }
+
+    console.log(
+      `🚗 Updating mobil: ${existingMobil.merek} ${existingMobil.tipe}`
+    );
+    console.log(`📸 Current photos: ${existingMobil.fotos?.length || 0}`);
 
     // Extract form fields
     const updateData: any = {};
@@ -110,12 +79,12 @@ export async function PUT(
       }
     });
 
-    // Handle photos
+    // Handle photo updates
     const newPhotos = formData.getAll("fotos") as File[];
-    let finalFotos = [...existingMobil.fotos]; // Start with existing photos
+    let finalFotos = [...(existingMobil.fotos || [])]; // Start with existing photos
 
     if (newPhotos.length > 0 && newPhotos[0].size > 0) {
-      console.log(`Processing ${newPhotos.length} new photos...`);
+      console.log(`📸 Processing ${newPhotos.length} new photos...`);
 
       // Validate new photos
       for (const photo of newPhotos) {
@@ -137,33 +106,59 @@ export async function PUT(
       const uploadDir = path.join(process.cwd(), "public", "uploads");
       if (!existsSync(uploadDir)) {
         await mkdir(uploadDir, { recursive: true });
+        console.log(`📁 Created upload directory: ${uploadDir}`);
       }
 
-      // Save new photos
+      // Save new photos with unique names
       const savedPhotoNames: string[] = [];
-      for (const photo of newPhotos) {
-        const bytes = await photo.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+      for (let i = 0; i < newPhotos.length; i++) {
+        const photo = newPhotos[i];
 
-        // Generate unique filename
-        const fileExtension = path.extname(photo.name);
-        const fileName = `${crypto.randomUUID()}${fileExtension}`;
-        const filePath = path.join(uploadDir, fileName);
+        try {
+          const bytes = await photo.arrayBuffer();
+          const buffer = Buffer.from(bytes);
 
-        await writeFile(filePath, buffer);
-        savedPhotoNames.push(fileName);
-        console.log(`Saved new photo: ${fileName}`);
+          // Generate unique filename with timestamp
+          const timestamp = Date.now();
+          const randomId = Math.random().toString(36).substring(2, 15);
+          const fileExtension = path.extname(photo.name) || ".jpg";
+          const fileName = `${timestamp}_${randomId}${fileExtension}`;
+          const filePath = path.join(uploadDir, fileName);
+
+          await writeFile(filePath, buffer);
+          savedPhotoNames.push(fileName);
+          console.log(
+            `✅ Saved new photo ${i + 1}/${newPhotos.length}: ${fileName}`
+          );
+        } catch (photoError) {
+          console.error(`❌ Failed to save photo ${i + 1}:`, photoError);
+          // Clean up any successfully saved files
+          for (const savedFile of savedPhotoNames) {
+            try {
+              await unlink(path.join(uploadDir, savedFile));
+            } catch (cleanupError) {
+              console.error(`Failed to cleanup ${savedFile}:`, cleanupError);
+            }
+          }
+          return NextResponse.json(
+            { success: false, message: `Gagal menyimpan foto ${i + 1}` },
+            { status: 500 }
+          );
+        }
       }
 
       // Add new photos to the array
       finalFotos.push(...savedPhotoNames);
+      console.log(
+        `📸 Total photos after adding new ones: ${finalFotos.length}`
+      );
 
-      // If total photos exceed 10, remove oldest photos and delete files
+      // 🔥 FIXED: Proper photo management with deletion
       if (finalFotos.length > 10) {
         const photosToRemove = finalFotos.length - 10;
-        const removedPhotos = finalFotos.splice(0, photosToRemove);
+        const removedPhotos = finalFotos.splice(0, photosToRemove); // Remove from beginning (oldest first)
 
-        console.log(`Removing ${photosToRemove} old photos:`, removedPhotos);
+        console.log(`🗑️ Removing ${photosToRemove} old photos:`, removedPhotos);
 
         // Delete removed photo files from server
         for (const photoName of removedPhotos) {
@@ -171,14 +166,23 @@ export async function PUT(
             const photoPath = path.join(uploadDir, photoName);
             if (existsSync(photoPath)) {
               await unlink(photoPath);
-              console.log(`Deleted old photo: ${photoName}`);
+              console.log(`🗑️ Deleted old photo from server: ${photoName}`);
+            } else {
+              console.log(
+                `⚠️ Photo not found on server (may be already deleted): ${photoName}`
+              );
             }
           } catch (deleteError) {
-            console.error(`Failed to delete photo ${photoName}:`, deleteError);
+            console.error(
+              `❌ Failed to delete photo ${photoName}:`,
+              deleteError
+            );
             // Continue with the process even if file deletion fails
           }
         }
       }
+
+      console.log(`📸 Final photo count: ${finalFotos.length}`);
     }
 
     // Update the mobil data
@@ -188,15 +192,22 @@ export async function PUT(
       new: true,
     });
 
-    console.log(`Successfully updated mobil with ${finalFotos.length} photos`);
+    console.log(
+      `✅ Successfully updated mobil with ${finalFotos.length} photos`
+    );
 
     return NextResponse.json({
       success: true,
       message: "Mobil berhasil diupdate",
-      data: updatedMobil,
+      data: {
+        _id: updatedMobil._id,
+        merek: updatedMobil.merek,
+        tipe: updatedMobil.tipe,
+        photosCount: updatedMobil.fotos?.length || 0,
+      },
     });
   } catch (error) {
-    console.error("Error updating mobil:", error);
+    console.error("❌ Error updating mobil:", error);
     return NextResponse.json(
       {
         success: false,
@@ -208,7 +219,43 @@ export async function PUT(
   }
 }
 
-// Untuk DELETE request (hapus mobil dan semua fotonya)
+// PATCH request untuk update status saja (tidak berubah)
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectMongo();
+    const { status } = await req.json();
+
+    const updatedMobil = await Mobil.findByIdAndUpdate(
+      params.id,
+      { status },
+      { new: true }
+    );
+
+    if (!updatedMobil) {
+      return NextResponse.json(
+        { success: false, message: "Mobil tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Status mobil berhasil diupdate",
+      data: updatedMobil,
+    });
+  } catch (error) {
+    console.error("Error updating mobil status:", error);
+    return NextResponse.json(
+      { success: false, message: "Gagal mengupdate status mobil" },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE request (tidak berubah)
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -216,7 +263,6 @@ export async function DELETE(
   try {
     await connectMongo();
 
-    // Get mobil data first to get photo list
     const mobil = await Mobil.findById(params.id);
     if (!mobil) {
       return NextResponse.json(
@@ -241,7 +287,6 @@ export async function DELETE(
       }
     }
 
-    // Delete mobil from database
     await Mobil.findByIdAndDelete(params.id);
 
     return NextResponse.json({
@@ -257,7 +302,7 @@ export async function DELETE(
   }
 }
 
-// Untuk GET request (ambil data mobil)
+// GET request (tidak berubah)
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }

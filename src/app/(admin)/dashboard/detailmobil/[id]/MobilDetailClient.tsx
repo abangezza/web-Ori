@@ -1,3 +1,4 @@
+// src/app/(admin)/dashboard/detailmobil/[id]/MobilDetailClient.tsx
 "use client";
 
 import { MobilType } from "@/types/mobil";
@@ -6,7 +7,8 @@ import { MdOutlineAvTimer } from "react-icons/md";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import UpdateMobil from "@/components/updateMobil";
-import Image from "next/image";
+import MobilImageAccordion from "@/components/MobilImageAccordion";
+import MobilImageModal from "@/components/MobilImageModal";
 
 interface MobilDetailClientWrapperProps {
   data: MobilType;
@@ -23,7 +25,7 @@ export default function MobilDetailClientWrapper({
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string>("");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [status, setStatus] = useState(data.status || "tersedia");
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -128,14 +130,31 @@ export default function MobilDetailClientWrapper({
     router.refresh();
   };
 
-  const openImageModal = (imageSrc: string) => {
-    setSelectedImage(imageSrc);
+  // Image modal functions
+  const openImageModal = (imageIndex: number) => {
+    setSelectedImageIndex(imageIndex);
     setShowImageModal(true);
   };
 
   const closeImageModal = () => {
     setShowImageModal(false);
-    setSelectedImage("");
+    setSelectedImageIndex(0);
+  };
+
+  const goToNextImage = () => {
+    if (data.fotos && data.fotos.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === data.fotos.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const goToPreviousImage = () => {
+    if (data.fotos && data.fotos.length > 0) {
+      setSelectedImageIndex((prev) =>
+        prev === 0 ? data.fotos.length - 1 : prev - 1
+      );
+    }
   };
 
   // Format tanggal pajak ke format Indonesia
@@ -165,6 +184,8 @@ export default function MobilDetailClientWrapper({
     return `${hari}-${bulan}-${tahun}`;
   };
 
+  const mobilName = `${data.merek} ${data.tipe} ${data.tahun}`;
+
   return (
     <div className="max-w-8xl mx-auto">
       {/* User Role Info */}
@@ -190,173 +211,17 @@ export default function MobilDetailClientWrapper({
         </div>
       </div>
 
-      {/* Photo Accordion - Full Width */}
-      <div className="mb-6">
-        <style jsx>{`
-          .accordion-container {
-            display: flex;
-            overflow: hidden;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            min-height: 420px;
-            background: white;
-            padding: 0 8px 8px 8px;
-            border-radius: 0 0 16px 16px;
-            margin: 60px;
-            margin-top: 60px;
-          }
-
-          .accordion-item {
-            position: relative;
-            overflow: hidden;
-            cursor: pointer;
-            transition: flex 0.5s ease-in-out;
-            flex: 0.5;
-            margin: 0 4px;
-            border-radius: 9px 9px 9px 9px;
-          }
-
-          .accordion-item:first-child {
-            margin-left: 0;
-          }
-
-          .accordion-item:last-child {
-            margin-right: 0;
-          }
-
-          .accordion-item:hover {
-            flex: 2;
-          }
-
-          .accordion-image {
-            width: 100%;
-            height: 420px;
-            object-fit: cover;
-            transition: transform 0.5s ease;
-            border-radius: 0 0 12px 12px;
-          }
-
-          .accordion-item:hover .accordion-image {
-            transform: scale(1.1);
-          }
-
-          .image-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0);
-            transition: background 0.3s ease;
-          }
-
-          .accordion-item:hover .image-overlay {
-            background: rgba(0, 0, 0, 0.2);
-          }
-
-          .zoom-icon {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            padding: 8px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-
-          .accordion-item:hover .zoom-icon {
-            opacity: 1;
-          }
-
-          .zoom-icon:hover {
-            background: rgba(255, 255, 255, 0.9);
-          }
-
-          .image-number {
-            position: absolute;
-            bottom: 16px;
-            left: 16px;
-            background: rgba(0, 0, 0, 0.6);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 9999px;
-            font-size: 14px;
-            font-weight: 500;
-          }
-        `}</style>
-
-        <div className="accordion-container">
-          {data.fotos && data.fotos.length > 0 ? (
-            data.fotos.map((foto, i) => (
-              <div
-                key={i}
-                className="accordion-item"
-                onClick={() => openImageModal(`/api/uploads/${foto}`)}
-              >
-                <Image
-                  src={`/api/uploads/${foto}`}
-                  alt={`Foto ${i + 1}`}
-                  fill
-                  className="object-cover"
-                  unoptimized
-                  onError={() =>
-                    console.error(
-                      "Error loading image:",
-                      `/api/uploads/${foto}`
-                    )
-                  }
-                />
-
-                <div className="image-overlay" />
-
-                <div className="zoom-icon">
-                  <svg
-                    className="w-5 h-5 text-gray-700"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"
-                    />
-                  </svg>
-                </div>
-
-                <div className="image-number">{i + 1}</div>
-              </div>
-            ))
-          ) : (
-            <div
-              style={{
-                width: "100%",
-                height: "420px",
-                backgroundColor: "#f3f4f6",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <p style={{ color: "#6b7280" }}>Tidak ada foto tersedia</p>
-            </div>
-          )}
-        </div>
-
-        <div className="text-center mt-3">
-          <span className="text-sm text-gray-500">
-            {data.fotos?.length || 0} foto tersedia - Klik untuk memperbesar
-          </span>
-        </div>
-      </div>
+      {/* Photo Accordion - Using the new component */}
+      <MobilImageAccordion
+        fotos={data.fotos}
+        mobilName={mobilName}
+        onImageClick={openImageModal}
+      />
 
       {/* Content with padding - Centered */}
       <div className="max-w-6xl mx-auto px-6">
         {/* Judul dan Harga */}
-        <h1 className="text-2xl font-bold mb-2">
-          {data.merek} {data.tipe} {data.tahun}
-        </h1>
+        <h1 className="text-2xl font-bold mb-2">{mobilName}</h1>
         <div className="flex items-center gap-4 text-lg text-gray-500 mb-2">
           <span>
             <MdOutlineAvTimer
@@ -738,71 +603,17 @@ export default function MobilDetailClientWrapper({
         </div>
       </div>
 
-      {/* Image Modal */}
-      {showImageModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50">
-          <div className="relative w-full h-full flex items-center justify-center p-4">
-            <button
-              onClick={closeImageModal}
-              className="absolute top-4 right-4 z-10 bg-white hover:bg-gray-100 text-gray-800 rounded-full p-3 transition-all duration-200 shadow-lg border-2 border-gray-200"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <button
-              onClick={closeImageModal}
-              className="absolute top-4 left-4 z-10 bg-black bg-opacity-60 hover:bg-opacity-80 text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium"
-            >
-              ← Kembali
-            </button>
-
-            <div className="relative max-w-full max-h-full">
-              <Image
-                src={selectedImage}
-                alt="Foto Mobil"
-                width={1500}
-                height={1200}
-                className="max-w-full max-h-full object-contain"
-                style={{ maxHeight: "calc(100vh - 120px)" }}
-                unoptimized
-              />
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-              {data.fotos.map((foto, i) => (
-                <button
-                  key={i}
-                  onClick={() => setSelectedImage(`/api/uploads/${foto}`)}
-                  className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                    selectedImage === `/api/uploads/${foto}`
-                      ? "bg-white"
-                      : "bg-white bg-opacity-50 hover:bg-opacity-75"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <div className="absolute bottom-4 right-4 bg-black bg-opacity-60 text-white px-3 py-2 rounded-lg text-sm font-medium">
-              {data.fotos.indexOf(selectedImage.replace("/uploads/", "")) + 1} /{" "}
-              {data.fotos.length}
-            </div>
-          </div>
-
-          <div className="absolute inset-0 -z-10" onClick={closeImageModal} />
-        </div>
-      )}
+      {/* Image Modal - Using the new component */}
+      <MobilImageModal
+        isOpen={showImageModal}
+        fotos={data.fotos}
+        currentImageIndex={selectedImageIndex}
+        mobilName={mobilName}
+        onClose={closeImageModal}
+        onNext={goToNextImage}
+        onPrevious={goToPreviousImage}
+        onImageSelect={setSelectedImageIndex}
+      />
 
       {/* Description Modal */}
       {showDescriptionModal && (
@@ -823,9 +634,7 @@ export default function MobilDetailClientWrapper({
             <div className="space-y-4">
               <div>
                 <h3 className="font-semibold text-gray-700 mb-2">Kendaraan:</h3>
-                <p className="text-gray-600">
-                  {data.merek} {data.tipe} ({data.tahun})
-                </p>
+                <p className="text-gray-600">{mobilName}</p>
               </div>
 
               <div>
@@ -921,7 +730,7 @@ export default function MobilDetailClientWrapper({
               <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                 <p className="text-gray-600 mb-2">Anda akan menghapus:</p>
                 <p className="font-semibold text-gray-800 text-lg">
-                  {data.merek} {data.tipe} ({data.tahun})
+                  {mobilName}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">
                   No. Pol: {data.noPol}

@@ -1,4 +1,4 @@
-// src/app/(customer)/about/page.tsx - Key Responsive Sections
+// src/app/(customer)/about/page.tsx - Updated with Photos and Maps
 "use client";
 
 import React, { useState } from "react";
@@ -11,6 +11,7 @@ import {
   Clock,
   Shield,
   Star,
+  ExternalLink,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -25,32 +26,64 @@ const AboutPage = () => {
     { number: "100%", label: "Garansi Kualitas", icon: Shield },
   ];
 
-  // Team members data
+  // Team members data with photos
   const teamMembers = [
     {
       name: "Ezza Sulthany Fahman",
       position: "Founder & CEO",
       description: "Pengalaman 10 tahun di industri otomotif",
+      photo:
+        "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face&auto=format",
     },
     {
       name: "Farhan Azziyad Fahman",
       position: "CO-Founder & CTO",
       description: "Expert dalam konsultasi dan penjualan mobil",
+      photo:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format",
     },
     {
       name: "Zahran Hadzami Rahman",
       position: "Media Social Manager",
       description: "Administrasi dan media sosial",
+      photo:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face&auto=format",
     },
     {
       name: "Muhammad Shidqy Fahman",
       position: "Customer Relations",
       description: "Mengutamakan kepuasan pelanggan",
+      photo:
+        "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?w=150&h=150&fit=crop&crop=face&auto=format",
     },
     {
       name: "Syauqi Zamzami Rahman",
       position: "Marketing Manager",
       description: "Penjualan dan promosi produk",
+      photo:
+        "https://images.unsplash.com/photo-1506794778202-cad84cf45f60?w=150&h=150&fit=crop&crop=face&auto=format",
+    },
+  ];
+
+  // Showroom locations data
+  const showroomLocations = [
+    {
+      name: "Radja Auto Car 1",
+      address: "Lokasi Showroom Pertama",
+      googleMapsUrl: "https://g.co/kgs/5UvgWPP",
+      embedUrl:
+        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.659193796394!2d103.64564!3d1.595833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMzUnNDUuMCJOIDEwM8KwMzgnNDQuMyJF!5e0!3m2!1sen!2sid!4v1234567890!5m2!1sen!2sid",
+      phone: "+62 811-1110-067",
+      hours: "Senin - Sabtu: 08.00 - 21.00",
+    },
+    {
+      name: "Radja Auto Car 2",
+      address: "Lokasi Showroom Kedua",
+      googleMapsUrl: "https://g.co/kgs/s8XQdoD",
+      embedUrl:
+        "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.659193796394!2d103.64564!3d1.595833!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMcKwMzUnNDUuMCJOIDEwM8KwMzgnNDQuMyJF!5e0!3m2!1sen!2sid!4v1234567891!5m2!1sen!2sid",
+      phone: "+62 811-1110-067",
+      hours: "Minggu: 08.00 - 22.00",
     },
   ];
 
@@ -61,6 +94,10 @@ const AboutPage = () => {
       message
     )}`;
     window.open(whatsappUrl, "_blank");
+  };
+
+  const handleLocationClick = (url: string) => {
+    window.open(url, "_blank");
   };
 
   return (
@@ -206,7 +243,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Team Section - Responsive Grid */}
+      {/* Team Section - Updated with Photos */}
       <section className="py-12 lg:py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center mb-8 lg:mb-12">
@@ -219,24 +256,120 @@ const AboutPage = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-8">
             {teamMembers.map((member, index) => (
               <div
                 key={index}
-                className="bg-gray-50 rounded-2xl p-4 lg:p-6 text-center hover:shadow-lg transition-shadow"
+                className="bg-gray-50 rounded-2xl p-4 lg:p-6 text-center hover:shadow-lg transition-all duration-300 hover:transform hover:scale-105"
               >
-                <div className="w-16 h-16 lg:w-24 lg:h-24 bg-gray-300 rounded-full mx-auto mb-3 lg:mb-4 flex items-center justify-center">
-                  <Users className="w-8 h-8 lg:w-12 lg:h-12 text-gray-600" />
+                {/* Photo */}
+                <div className="relative w-20 h-20 lg:w-24 lg:h-24 mx-auto mb-4">
+                  <Image
+                    src={member.photo}
+                    alt={member.name}
+                    fill
+                    className="rounded-full object-cover border-4 border-orange-200"
+                    sizes="(max-width: 768px) 80px, 96px"
+                  />
                 </div>
-                <h3 className="text-lg lg:text-xl font-semibold mb-1 lg:mb-2 text-gray-800">
+
+                <h3 className="text-lg lg:text-xl font-semibold mb-1 lg:mb-2 text-gray-800 break-words">
                   {member.name}
                 </h3>
                 <p className="text-orange-600 font-medium mb-2 lg:mb-3 text-sm lg:text-base">
                   {member.position}
                 </p>
-                <p className="text-gray-600 text-xs lg:text-sm">
+                <p className="text-gray-600 text-xs lg:text-sm leading-relaxed">
                   {member.description}
                 </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Showroom Locations Section - New */}
+      <section className="py-12 lg:py-16 bg-gray-50">
+        <div className="container mx-auto px-4 sm:px-6">
+          <div className="text-center mb-8 lg:mb-12">
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4 text-gray-800">
+              Lokasi Showroom Kami
+            </h2>
+            <p className="text-base lg:text-xl text-gray-600 max-w-2xl mx-auto">
+              Kunjungi showroom kami untuk melihat langsung koleksi mobil
+              terbaik
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 max-w-6xl mx-auto">
+            {showroomLocations.map((location, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300"
+              >
+                {/* Map Embed */}
+                <div className="relative h-64 lg:h-80 bg-gray-200">
+                  <iframe
+                    src={location.embedUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    className="absolute inset-0"
+                  ></iframe>
+                </div>
+
+                {/* Location Info */}
+                <div className="p-6 lg:p-8">
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-xl lg:text-2xl font-bold text-gray-800">
+                      {location.name}
+                    </h3>
+                    <button
+                      onClick={() =>
+                        handleLocationClick(location.googleMapsUrl)
+                      }
+                      className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Buka di Maps
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-gray-600 text-sm lg:text-base">
+                        {location.address}
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Phone className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-gray-600 text-sm lg:text-base">
+                        {location.phone}
+                      </p>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Clock className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <p className="text-gray-600 text-sm lg:text-base">
+                        {location.hours}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <button
+                    onClick={() => handleLocationClick(location.googleMapsUrl)}
+                    className="w-full mt-6 bg-gray-800 hover:bg-gray-900 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Lihat Rute ke Lokasi
+                  </button>
+                </div>
               </div>
             ))}
           </div>

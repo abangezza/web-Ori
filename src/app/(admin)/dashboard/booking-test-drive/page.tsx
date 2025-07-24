@@ -29,7 +29,7 @@ export default async function BookingTestDrivePage() {
       const testDate = new Date(booking.tanggalTest);
       testDate.setHours(0, 0, 0, 0);
 
-      if (testDate < today) {
+      if (testDate <= today) {
         stats.expired++;
       } else if (testDate.getTime() === today.getTime()) {
         stats.today++;

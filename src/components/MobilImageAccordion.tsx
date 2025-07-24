@@ -16,7 +16,6 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
 }) => {
   const [loadErrors, setLoadErrors] = useState<Set<number>>(new Set());
   const [loadingStates, setLoadingStates] = useState<Set<number>>(new Set());
-  const [debugMode, setDebugMode] = useState(true); // Default true untuk debug
 
   // Handle image load error
   const handleImageError = (index: number) => {
@@ -65,47 +64,11 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
 
   return (
     <div className="mb-6">
-      {/* Debug Toggle */}
-      <div className="mb-4 text-center">
-        <button
-          onClick={() => setDebugMode(!debugMode)}
-          className="px-4 py-2 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-        >
-          {debugMode ? "🐛 Hide Debug" : "🔍 Show Debug"}
-        </button>
-      </div>
-
-      {/* Debug Panel */}
-      {debugMode && (
-        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <h3 className="font-bold mb-2">🐛 CSS Debug Information</h3>
-          <div className="text-sm space-y-2">
-            <div>
-              <strong>Total photos:</strong> {fotos.length}
-            </div>
-            <div>
-              <strong>Load errors:</strong> {loadErrors.size}
-            </div>
-            <div>
-              <strong>Loading states:</strong> {loadingStates.size}
-            </div>
-            <div>
-              <strong>Sample URLs:</strong>
-            </div>
-            <ul className="ml-4 space-y-1">
-              {fotos.slice(0, 2).map((foto, i) => (
-                <li key={i} className="font-mono text-xs break-all">
-                  {i + 1}. /api/uploads/{foto}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
-
       {/* ✅ SOLUTION 1: Simplified CSS Accordion */}
       <div className="bg-white p-4 rounded-lg shadow-lg mb-4">
-        <h4 className="font-bold mb-2">🎯 Solution 1: Simplified Layout</h4>
+        <h4 className="font-bold mb-2 text-center">
+          🎯 Click Foto untuk Melihat Gambar Secara Full Yaa{" "}
+        </h4>
         <div className="flex gap-2 h-96 overflow-hidden">
           {fotos.map((foto, i) => (
             <div
@@ -143,7 +106,7 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
       {/* Info */}
       <div className="text-center mt-3">
         <span className="text-sm text-gray-500">
-          {fotos.length} foto tersedia -
+          {fotos.length} foto tersedia
           {loadErrors.size > 0 && (
             <span className="text-red-500 ml-1">({loadErrors.size} error)</span>
           )}

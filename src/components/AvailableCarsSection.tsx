@@ -1,4 +1,4 @@
-// src/components/AvailableCarsSection.tsx
+// src/components/AvailableCarsSection.tsx - Updated Mobile Grid
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -118,10 +118,10 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
             </div>
           )}
 
-          {/* Loading Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
+          {/* Loading Skeleton - Updated Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center">
             {Array.from({ length: itemsPerPage }).map((_, index) => (
-              <div key={index} className="w-full max-w-xs">
+              <div key={index} className="w-full max-w-sm md:max-w-xs">
                 <div className="bg-gray-200 animate-pulse rounded-2xl h-80 mb-4"></div>
                 <div className="bg-gray-200 animate-pulse rounded h-4 mb-2"></div>
                 <div className="bg-gray-200 animate-pulse rounded h-4 w-3/4"></div>
@@ -193,23 +193,35 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
           </div>
         )}
 
-        {/* Grid Cards - Optimized for 4 columns */}
+        {/* Grid Cards - Mobile: 1 column, Desktop: up to 4 columns */}
         <div className="flex justify-center">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center mb-8 max-w-6xl">
-            {currentMobils.map((mobil) => (
-              <MobilCard key={mobil._id} mobil={mobil} />
-            ))}
+          <div className="w-full max-w-6xl">
+            {/* Mobile Grid: 1 column with full width cards */}
+            <div className="grid grid-cols-1 md:hidden gap-6 justify-items-center mb-8">
+              {currentMobils.map((mobil) => (
+                <div key={mobil._id} className="w-full max-w-sm">
+                  <MobilCard mobil={mobil} />
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Grid: 2-4 columns */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 justify-items-center mb-8">
+              {currentMobils.map((mobil) => (
+                <MobilCard key={mobil._id} mobil={mobil} />
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2 mt-8">
+          <div className="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-2 mt-8">
             {/* Previous Button */}
             <button
               onClick={goToPrevious}
               disabled={currentPage === 1}
-              className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto justify-center ${
                 currentPage === 1
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300"
@@ -220,7 +232,7 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
             </button>
 
             {/* Page Numbers */}
-            <div className="flex space-x-1">
+            <div className="flex flex-wrap justify-center gap-1">
               {getPageNumbers().map((page, index) => (
                 <React.Fragment key={index}>
                   {page === "..." ? (
@@ -245,7 +257,7 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
             <button
               onClick={goToNext}
               disabled={currentPage === totalPages}
-              className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors ${
+              className={`flex items-center px-3 py-2 rounded-lg font-medium transition-colors w-full sm:w-auto justify-center ${
                 currentPage === totalPages
                   ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-orange-50 hover:text-orange-600 border border-gray-300"

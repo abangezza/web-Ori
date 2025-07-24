@@ -1,8 +1,48 @@
-// src/app/(admin)/dashboard/booking-test-drive/page.tsx - Responsive Version
+// src/app/(admin)/dashboard/booking-test-drive/page.tsx - Fixed Version with Stats
 import React from "react";
 import AdminTestDriveTable from "@/components/AdminTestDriveTable";
+import connectMongo from "@/lib/conn";
+import TestDriveBooking from "@/models/testdrivebooking";
 
-export default function BookingTestDrivePage() {
+export default async function BookingTestDrivePage() {
+  // Fetch data untuk statistik
+  let stats = {
+    total: 0,
+    today: 0,
+    active: 0,
+    expired: 0,
+  };
+
+  try {
+    await connectMongo();
+
+    // Get all bookings
+    const allBookings = await TestDriveBooking.find().lean();
+
+    // Calculate statistics
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    stats.total = allBookings.length;
+
+    allBookings.forEach((booking) => {
+      const testDate = new Date(booking.tanggalTest);
+      testDate.setHours(0, 0, 0, 0);
+
+      if (testDate < today) {
+        stats.expired++;
+      } else if (testDate.getTime() === today.getTime()) {
+        stats.today++;
+        stats.active++;
+      } else {
+        stats.active++;
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching booking stats:", error);
+    // Keep default stats if error occurs
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
@@ -19,11 +59,11 @@ export default function BookingTestDrivePage() {
                 </p>
               </div>
 
-              {/* Quick Stats */}
+              {/* Quick Stats - FIXED: Tampilkan data real dari database */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center sm:text-left">
                   <div className="text-lg sm:text-xl font-bold text-blue-600">
-                    📅
+                    {stats.active}
                   </div>
                   <div className="text-xs sm:text-sm text-blue-600 font-medium">
                     Booking Aktif
@@ -31,7 +71,7 @@ export default function BookingTestDrivePage() {
                 </div>
                 <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-center sm:text-left">
                   <div className="text-lg sm:text-xl font-bold text-green-600">
-                    ✅
+                    {stats.today}
                   </div>
                   <div className="text-xs sm:text-sm text-green-600 font-medium">
                     Test Drive Hari Ini
@@ -39,7 +79,7 @@ export default function BookingTestDrivePage() {
                 </div>
                 <div className="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 text-center sm:text-left">
                   <div className="text-lg sm:text-xl font-bold text-orange-600">
-                    🚗
+                    {stats.total}
                   </div>
                   <div className="text-xs sm:text-sm text-orange-600 font-medium">
                     Total Booking
@@ -115,7 +155,7 @@ export default function BookingTestDrivePage() {
                   Booking Hari Ini
                 </p>
                 <p className="text-lg sm:text-xl font-semibold text-gray-900">
-                  -
+                  {stats.today}
                 </p>
               </div>
             </div>
@@ -145,7 +185,7 @@ export default function BookingTestDrivePage() {
                   Booking Aktif
                 </p>
                 <p className="text-lg sm:text-xl font-semibold text-gray-900">
-                  -
+                  {stats.active}
                 </p>
               </div>
             </div>
@@ -175,7 +215,7 @@ export default function BookingTestDrivePage() {
                   Booking Expired
                 </p>
                 <p className="text-lg sm:text-xl font-semibold text-gray-900">
-                  -
+                  {stats.expired}
                 </p>
               </div>
             </div>
@@ -205,7 +245,7 @@ export default function BookingTestDrivePage() {
                   Total Booking
                 </p>
                 <p className="text-lg sm:text-xl font-semibold text-gray-900">
-                  -
+                  {stats.total}
                 </p>
               </div>
             </div>
@@ -316,6 +356,41 @@ export default function BookingTestDrivePage() {
                 <span className="text-sm text-gray-600">
                   Tanggal test drive sudah terlewat
                 </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Summary Card */}
+        <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              📊 Ringkasan Statistik Booking
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.total}
+                </div>
+                <div className="text-sm text-gray-600">Total Booking</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.active}
+                </div>
+                <div className="text-sm text-gray-600">Booking Aktif</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {stats.today}
+                </div>
+                <div className="text-sm text-gray-600">Hari Ini</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {stats.expired}
+                </div>
+                <div className="text-sm text-gray-600">Expired</div>
               </div>
             </div>
           </div>

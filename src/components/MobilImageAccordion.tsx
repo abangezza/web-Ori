@@ -1,4 +1,4 @@
-// src/components/MobilImageAccordion.tsx - DEBUG VERSION
+// src/components/MobilImageAccordion.tsx - FIXED VERSION
 "use client";
 
 import React, { useState } from "react";
@@ -16,12 +16,18 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
   onImageClick,
 }) => {
   const [loadErrors, setLoadErrors] = useState<Set<number>>(new Set());
+  const [loadingStates, setLoadingStates] = useState<Set<number>>(new Set());
   const [debugMode, setDebugMode] = useState(false);
 
   // Handle image load error
   const handleImageError = (index: number) => {
     console.error(`❌ Image ${index + 1} load error:`, fotos[index]);
     setLoadErrors((prev) => new Set([...prev, index]));
+    setLoadingStates((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
   };
 
   // Handle image load success
@@ -34,6 +40,16 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
         return newSet;
       });
     }
+    setLoadingStates((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+  };
+
+  // Handle image load start
+  const handleImageLoadStart = (index: number) => {
+    setLoadingStates((prev) => new Set([...prev, index]));
   };
 
   // Test image URL function
@@ -53,6 +69,25 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
       console.error(`❌ Network error ${index + 1}:`, error);
       return false;
     }
+  };
+
+  // ✅ FIXED: Alternative image rendering using regular img tag for accordion
+  const renderAccordionImage = (foto: string, index: number) => {
+    const imageUrl = `/api/uploads/${foto}`;
+
+    return (
+      <img
+        src={imageUrl}
+        alt={`${mobilName} - Foto ${index + 1}`}
+        className="w-full h-96 object-cover transition-transform duration-500 hover:scale-110"
+        onLoad={() => handleImageLoad(index)}
+        onError={() => handleImageError(index)}
+        onLoadStart={() => handleImageLoadStart(index)}
+        style={{
+          backgroundColor: loadingStates.has(index) ? "#f3f4f6" : "transparent",
+        }}
+      />
+    );
   };
 
   if (!fotos || fotos.length === 0) {
@@ -88,6 +123,9 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
             </div>
             <div>
               <strong>Load errors:</strong> {loadErrors.size}
+            </div>
+            <div>
+              <strong>Loading states:</strong> {loadingStates.size}
             </div>
             <div>
               <strong>Sample URLs:</strong>
@@ -152,19 +190,14 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
               </div>
             ) : (
               <>
-                {/* Image */}
+                {/* ✅ FIXED: Use regular img tag instead of Next.js Image for accordion */}
                 <div className="relative w-full h-96">
-                  <Image
-                    src={`/api/uploads/${foto}`}
-                    alt={`${mobilName} - Foto ${i + 1}`}
-                    fill
-                    className="object-cover transition-transform duration-500 hover:scale-110"
-                    unoptimized={true}
-                    onError={() => handleImageError(i)}
-                    onLoad={() => handleImageLoad(i)}
-                    priority={i < 2}
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
+                  {loadingStates.has(i) && (
+                    <div className="absolute inset-0 bg-gray-200 flex items-center justify-center z-10">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                    </div>
+                  )}
+                  {renderAccordionImage(foto, i)}
                 </div>
 
                 {/* Overlay */}
@@ -204,8 +237,30 @@ const MobilImageAccordion: React.FC<MobilImageAccordionProps> = ({
           {loadErrors.size > 0 && (
             <span className="text-red-500 ml-2">({loadErrors.size} error)</span>
           )}
+          {loadingStates.size > 0 && (
+            <span className="text-blue-500 ml-2">
+              ({loadingStates.size} loading)
+            </span>
+          )}
         </span>
       </div>
+
+      {/* ✅ ADDITIONAL: Test All Images Button */}
+      {debugMode && (
+        <div className="text-center mt-4">
+          <button
+            onClick={async () => {
+              console.log("🔍 Testing all image URLs...");
+              for (let i = 0; i < fotos.length; i++) {
+                await testImageUrl(fotos[i], i);
+              }
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded text-sm hover:bg-green-600"
+          >
+            Test All Images
+          </button>
+        </div>
+      )}
     </div>
   );
 };

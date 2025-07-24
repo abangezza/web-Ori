@@ -51,8 +51,11 @@ export default function Navbar() {
         {/* Max width container to center content */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo dan Brand */}
-            <div className="flex items-center flex-shrink-0">
+            {/* Logo dan Brand - Now Clickable */}
+            <Link
+              href="/"
+              className="flex items-center flex-shrink-0 hover:opacity-80 transition-opacity duration-200"
+            >
               <div className="relative mr-2 sm:mr-3">
                 {/* Background hitam bulat untuk logo */}
                 <div
@@ -85,7 +88,7 @@ export default function Navbar() {
                 <span className="hidden sm:inline">Radja Auto Car</span>
                 <span className="sm:hidden">Radja Auto</span>
               </span>
-            </div>
+            </Link>
 
             {/* Navigation Menu - Desktop */}
             <div className="hidden lg:flex items-center space-x-4 xl:space-x-6">

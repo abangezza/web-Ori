@@ -17,7 +17,7 @@ const NotFound: React.FC<NotFoundProps> = ({
   customHomeLink = "/",
 }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-indigo-100 flex items-center justify-center px-7">
       <div className="max-w-2xl mx-auto text-center">
         {/* 404 Animation */}
         <div className="relative mb-8">

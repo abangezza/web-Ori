@@ -53,11 +53,18 @@ const AvailableCarsSection: React.FC<AvailableCarsSectionProps> = ({
 
   const goToPage = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top of component
-    document.getElementById("available-cars-section")?.scrollIntoView({
+
+    // Scroll ke paling atas halaman
+    window.scrollTo({
+      top: 0,
       behavior: "smooth",
-      block: "start",
     });
+
+    // Alternative: Jika ingin scroll ke bagian atas section saja (uncomment baris di bawah dan comment yang di atas)
+    // document.getElementById("available-cars-section")?.scrollIntoView({
+    //   behavior: "smooth",
+    //   block: "start",
+    // });
   };
 
   const goToPrevious = () => {

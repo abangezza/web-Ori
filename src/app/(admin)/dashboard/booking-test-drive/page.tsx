@@ -58,34 +58,6 @@ export default async function BookingTestDrivePage() {
                   Kelola dan pantau semua booking test drive dari pelanggan
                 </p>
               </div>
-
-              {/* Quick Stats - FIXED: Tampilkan data real dari database */}
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-center sm:text-left">
-                  <div className="text-lg sm:text-xl font-bold text-blue-600">
-                    {stats.active}
-                  </div>
-                  <div className="text-xs sm:text-sm text-blue-600 font-medium">
-                    Booking Aktif
-                  </div>
-                </div>
-                <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-center sm:text-left">
-                  <div className="text-lg sm:text-xl font-bold text-green-600">
-                    {stats.today}
-                  </div>
-                  <div className="text-xs sm:text-sm text-green-600 font-medium">
-                    Test Drive Hari Ini
-                  </div>
-                </div>
-                <div className="bg-orange-50 border border-orange-200 rounded-lg px-3 py-2 text-center sm:text-left">
-                  <div className="text-lg sm:text-xl font-bold text-orange-600">
-                    {stats.total}
-                  </div>
-                  <div className="text-xs sm:text-sm text-orange-600 font-medium">
-                    Total Booking
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

@@ -19,8 +19,8 @@ const AboutPage = () => {
 
   // Stats data
   const stats = [
-    { number: "10+", label: "Tahun Pengalaman", icon: Clock },
-    { number: "5000+", label: "Pelanggan Puas", icon: Users },
+    { number: "6+", label: "Tahun Pengalaman", icon: Clock },
+    { number: "200+", label: "Pelanggan Puas", icon: Users },
     { number: "2", label: "Lokasi Showroom", icon: MapPin },
     { number: "100%", label: "Garansi Kualitas", icon: Shield },
   ];
@@ -28,24 +28,29 @@ const AboutPage = () => {
   // Team members data
   const teamMembers = [
     {
-      name: "Ahmad Reza",
+      name: "Ezza Sulthany Fahman",
       position: "Founder & CEO",
-      description: "Pengalaman 15 tahun di industri otomotif",
+      description: "Pengalaman 10 tahun di industri otomotif",
     },
     {
-      name: "Siti Nurhaliza",
-      position: "Sales Manager",
+      name: "Farhan Azziyad Fahman",
+      position: "CO-Founder & CTO",
       description: "Expert dalam konsultasi dan penjualan mobil",
     },
     {
-      name: "Budi Santoso",
-      position: "Service Manager",
-      description: "Spesialis perawatan dan perbaikan kendaraan",
+      name: "Zahran Hadzami Rahman",
+      position: "Media Social Manager",
+      description: "Administrasi dan media sosial",
     },
     {
-      name: "Maya Indira",
+      name: "Muhammad Shidqy Fahman",
       position: "Customer Relations",
       description: "Mengutamakan kepuasan pelanggan",
+    },
+    {
+      name: "Syauqi Zamzami Rahman",
+      position: "Marketing Manager",
+      description: "Penjualan dan promosi produk",
     },
   ];
 
@@ -77,7 +82,8 @@ const AboutPage = () => {
             className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 lg:mb-4"
             style={{ fontFamily: 'Georgia, "Times New Roman", serif' }}
           >
-            Tentang Radja Auto Car
+            Tentang <br />
+            Radja Auto Car
           </h1>
           <p className="text-base sm:text-lg lg:text-xl text-gray-300 max-w-2xl lg:max-w-3xl mx-auto leading-relaxed px-4">
             Dealer mobil terpercaya dengan pengalaman lebih dari 10 tahun dalam
@@ -281,10 +287,10 @@ const AboutPage = () => {
                           Jam Operasional
                         </p>
                         <p className="text-gray-300 text-sm lg:text-base">
-                          Senin - Sabtu: 08.00 - 17.00
+                          Senin - Sabtu: 08.00 - 21.00
                         </p>
                         <p className="text-gray-300 text-sm lg:text-base">
-                          Minggu: 08.00 - 15.00
+                          Minggu: 08.00 - 22.00
                         </p>
                       </div>
                     </div>

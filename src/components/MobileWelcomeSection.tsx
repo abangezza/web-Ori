@@ -27,19 +27,21 @@ const MobileWelcomeSection: React.FC<MobileWelcomeSectionProps> = ({
       </div>
 
       {/* Content */}
-      <div className="relative z-10 text-center px-6 py-10">
-        {/* Logo/Brand */}
-        <div className="mb-8">
-          <div className=" w-42 h-30 mx-auto mb-4 flex items-center justify-center ">
-            <Image
-              src="/Lambang.png"
-              alt="Radja Auto Car"
-              className="w-42 h-30"
-              width={42}
-              height={30}
-            />
-          </div>
-        </div>
+<div className="relative z-10 text-center px-6 py-10">
+  {/* Logo/Brand */}
+  <div className="mb-8">
+    <div className="w-32 h-32 mx-auto mb-4 flex items-center justify-center overflow-hidden rounded-md border border-gray-300 shadow">
+      <Image
+        src="/Lambang.png"
+        alt="Radja Auto Car"
+        width={128} // ukuran pixel sesuai w-32
+        height={128}
+        className="object-contain w-full h-full"
+      />
+    </div>
+  </div>
+</div>
+
 
         {/* Welcome Message */}
         <div className="space-y-6 mb-10">

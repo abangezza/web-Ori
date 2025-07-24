@@ -29,7 +29,6 @@ export default function MobilCard({ mobil }: MobilCardProps) {
   /// Get main photo or fallback
   const getMainPhoto = () => {
     if (mobil.fotos && mobil.fotos.length > 0) {
-      // ✅ Gunakan API route untuk serve images
       return `/api/uploads/${mobil.fotos[0]}`;
     }
     return "/lambang 1.png"; // fallback image
@@ -63,18 +62,19 @@ export default function MobilCard({ mobil }: MobilCardProps) {
   };
 
   return (
-    <div className="w-full max-w-xs bg-zinc-300 border border-orange-400 rounded-2xl overflow-hidden drop-shadow-lg hover:scale-105 transition duration-300 ease-in-out shadow-lg hover:shadow-2xl shadow-gray-400/100 hover:shadow-orange-500">
-      {/* Gambar - Fixed Height */}
-      <div className="relative w-full h-44">
+    <div className="w-full max-w-xs mx-auto bg-zinc-300 border border-orange-400 rounded-2xl overflow-hidden drop-shadow-lg hover:scale-105 transition duration-300 ease-in-out shadow-lg hover:shadow-2xl shadow-gray-400/100 hover:shadow-orange-500">
+      {/* Gambar - Responsive Height */}
+      <div className="relative w-full h-40 sm:h-44 md:h-48">
         <Image
           src={getMainPhoto()}
           alt={`${mobil.merek} ${mobil.tipe}`}
           fill
           className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
         />
 
         {/* Status dan Tahun Badges */}
-        <div className="absolute top-2 left-2 flex gap-1">
+        <div className="absolute top-2 left-2 flex flex-col sm:flex-row gap-1">
           <span
             className={`${getStatusColor(
               mobil.status
@@ -88,36 +88,53 @@ export default function MobilCard({ mobil }: MobilCardProps) {
         </div>
       </div>
 
-      {/* Content - Compact Padding */}
-      <div className="p-3">
+      {/* Content - Responsive Padding */}
+      <div className="p-3 sm:p-4">
         {/* Merek */}
-        <h3 className="text-orange-800 text-lg font-serif font-semibold">
+        <h3 className="text-orange-800 text-lg sm:text-xl font-serif font-semibold truncate">
           {mobil.merek}
         </h3>
 
         {/* Tipe dan Transmisi */}
-        <h2 className="text-lg font-medium truncate text-gray-800">
-          {mobil.tipe} • {mobil.transmisi}
+        <h2 className="text-base sm:text-lg font-medium text-gray-800 mb-2">
+          <span className="block sm:inline truncate">{mobil.tipe}</span>
+          <span className="hidden sm:inline"> • </span>
+          <span className="block sm:inline text-sm sm:text-base text-gray-600">
+            {mobil.transmisi}
+          </span>
         </h2>
 
-        {/* Spesifikasi - Compact Version */}
+        {/* Spesifikasi - Responsive Layout */}
         <div className="mt-2 text-gray-800 font-semibold">
-          <div className="flex flex-col gap-1 text-sm">
-            <span>🚗 {mobil.kilometer}</span>
-            <span>⛽ {mobil.bahan_bakar}</span>
-            <span>📅 {formatTanggalPajak(mobil.pajak)}</span>
+          <div className="grid grid-cols-1 gap-1 text-xs sm:text-sm">
+            <div className="flex items-center">
+              <span className="mr-1">🚗</span>
+              <span className="truncate">{mobil.kilometer}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-1">⛽</span>
+              <span className="truncate">{mobil.bahan_bakar}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="mr-1">📅</span>
+              <span className="truncate">
+                {formatTanggalPajak(mobil.pajak)}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Harga */}
-        <div className="mt-3 text-orange-500 text-lg font-bold">
-          Rp.{formatHarga(mobil.harga)}
+        {/* Harga - Responsive Text Size */}
+        <div className="mt-3 text-orange-500 font-bold">
+          <div className="text-base sm:text-lg md:text-xl">
+            Rp.{formatHarga(mobil.harga)}
+          </div>
         </div>
 
-        {/* Button */}
+        {/* Button - Full Width on Small Screens */}
         <div className="mt-3 border-t pt-3">
           <Link href={`/detailmobilcs/${mobil._id}`}>
-            <button className="w-full border border-black px-3 py-2 rounded-full hover:bg-orange-500 hover:text-white transition text-sm">
+            <button className="w-full border border-black px-3 py-2 rounded-full hover:bg-orange-500 hover:text-white transition text-xs sm:text-sm font-medium">
               Lihat Detail
             </button>
           </Link>

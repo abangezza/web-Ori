@@ -1,9 +1,8 @@
-// src/components/forms/SimulasiKreditForm.tsx
+// src/components/forms/SimulasiKreditForm.tsx - Responsive Version
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { MobilType } from "@/types/mobil";
-// Remove the import since we'll use API endpoint instead
 
 interface SimulasiKreditFormProps {
   mobil: MobilType;
@@ -136,7 +135,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
     setIsSubmitting(true);
 
     try {
-      console.log("Submitting simulasi kredit for:", formData.nama); // Debug log
+      console.log("Submitting simulasi kredit for:", formData.nama);
 
       // Save customer activity via API
       const activityResponse = await fetch("/api/customer-activity", {
@@ -158,7 +157,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
       });
 
       const activityResult = await activityResponse.json();
-      console.log("Activity save result:", activityResult); // Debug log
+      console.log("Activity save result:", activityResult);
 
       if (!activityResponse.ok) {
         console.warn("Failed to save customer activity:", activityResult);
@@ -195,31 +194,39 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
   };
 
   return (
-    <div className="w-full max-w-[1110px] bg-gray-50 rounded-lg p-8 mb-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Simulasi Kredit</h2>
-      <p className="text-gray-600 mb-6">
-        Berikut adalah Form untuk pengajuan Kredit
-      </p>
+    <div className="w-full max-w-4xl mx-auto bg-gray-50 rounded-lg p-4 sm:p-6 lg:p-8 mb-6 lg:mb-8">
+      <div className="mb-4 lg:mb-6">
+        <h2 className="text-xl lg:text-2xl font-bold text-gray-800 mb-2">
+          Simulasi Kredit
+        </h2>
+        <p className="text-sm lg:text-base text-gray-600">
+          Berikut adalah Form untuk pengajuan Kredit
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 lg:space-y-6">
         {/* Nama */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">Nama</label>
+          <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
+            Nama
+          </label>
           <input
             type="text"
             placeholder="Masukan Nama Anda"
             value={formData.nama}
             onChange={(e) => handleInputChange("nama", e.target.value)}
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full p-3 lg:p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm lg:text-base"
           />
           {errors.nama && (
-            <p className="text-red-500 text-sm mt-1">{errors.nama}</p>
+            <p className="text-red-500 text-xs lg:text-sm mt-1">
+              {errors.nama}
+            </p>
           )}
         </div>
 
         {/* Nomor WhatsApp */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
             Nomer Whatsapp
           </label>
           <input
@@ -227,17 +234,19 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
             placeholder="Masukan Nomer Hp Anda"
             value={formData.nomorWhatsapp}
             onChange={(e) => handleInputChange("nomorWhatsapp", e.target.value)}
-            className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+            className="w-full p-3 lg:p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm lg:text-base"
           />
           {errors.nomorWhatsapp && (
-            <p className="text-red-500 text-sm mt-1">{errors.nomorWhatsapp}</p>
+            <p className="text-red-500 text-xs lg:text-sm mt-1">
+              {errors.nomorWhatsapp}
+            </p>
           )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
           {/* Down Payment */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
               Down payment (Dp)
             </label>
             <input
@@ -253,16 +262,18 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
                   : "";
                 handleInputChange("dp", formatted);
               }}
-              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 lg:p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm lg:text-base"
             />
             {errors.dp && (
-              <p className="text-red-500 text-sm mt-1">{errors.dp}</p>
+              <p className="text-red-500 text-xs lg:text-sm mt-1">
+                {errors.dp}
+              </p>
             )}
           </div>
 
           {/* Tenor Cicilan */}
           <div>
-            <label className="block text-gray-700 font-medium mb-2">
+            <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
               Tenor Cicilan (Tahun)
             </label>
             <select
@@ -270,7 +281,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
               onChange={(e) =>
                 handleInputChange("tenorCicilan", e.target.value)
               }
-              className="w-full p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 lg:p-4 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm lg:text-base appearance-none bg-white"
             >
               <option value="">Tentukan Lama Waktu</option>
               <option value="4">4 Tahun</option>
@@ -281,7 +292,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
 
         {/* Request Angsuran */}
         <div>
-          <label className="block text-gray-700 font-medium mb-2">
+          <label className="block text-gray-700 font-medium mb-2 text-sm lg:text-base">
             Request Angsuran
           </label>
           <input
@@ -293,7 +304,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
                 : ""
             }
             readOnly
-            className="w-full p-4 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+            className="w-full p-3 lg:p-4 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed text-sm lg:text-base"
           />
         </div>
 
@@ -301,7 +312,7 @@ const SimulasiKreditForm: React.FC<SimulasiKreditFormProps> = ({ mobil }) => {
         <button
           onClick={handleSubmit}
           disabled={!isFormValid || isSubmitting}
-          className={`w-full py-4 rounded-xl text-white font-medium transition-colors ${
+          className={`w-full py-3 lg:py-4 rounded-xl text-white font-medium transition-colors text-sm lg:text-base ${
             isFormValid && !isSubmitting
               ? "bg-orange-500 hover:bg-orange-600"
               : "bg-gray-400 cursor-not-allowed"

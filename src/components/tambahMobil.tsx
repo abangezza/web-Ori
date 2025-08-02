@@ -96,6 +96,7 @@ export default function TambahMobilPage({ onSuccess }: TambahMobilPageProps) {
     "VOLVO",
     "CHERY",
     "BYD",
+    "Toyota 2",
   ];
 
   const warnaOptions = [

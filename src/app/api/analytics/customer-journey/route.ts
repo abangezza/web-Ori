@@ -4,337 +4,265 @@ import connectMongo from "@/lib/conn";
 import Pelanggan from "@/models/Pelanggan";
 import ActivityLog from "@/models/ActivityLog";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const year = searchParams.get("year")
-      ? parseInt(searchParams.get("year")!)
+      ? parseInt(searchParams.get("year") as string, 10)
       : undefined;
     const month = searchParams.get("month")
-      ? parseInt(searchParams.get("month")!)
+      ? parseInt(searchParams.get("month") as string, 10)
       : undefined;
 
     await connectMongo();
 
-    // Build date filter
-    let dateFilter = {};
-    if (year || month) {
-      const startDate = new Date(
-        year || new Date().getFullYear(),
-        month ? month - 1 : 0,
-        1
-      );
-      const endDate = new Date(
-        year || new Date().getFullYear(),
-        month ? month : 12,
-        1
-      );
-      dateFilter = {
-        createdAt: {
-          $gte: startDate,
-          $lt: endDate,
+    // === Build time range (UTC, aman untuk server) ===
+    const hasMonth = Boolean(year && month);
+    const start = hasMonth
+      ? new Date(Date.UTC(year!, month! - 1, 1, 0, 0, 0))
+      : undefined;
+    const end = hasMonth
+      ? new Date(Date.UTC(year!, month!, 1, 0, 0, 0))
+      : undefined;
+
+    // Helper date match untuk pipeline aggregate (normalisasi field tanggal)
+    const matchByCreated = hasMonth
+      ? { createdAt: { $gte: start, $lt: end } }
+      : {};
+    const matchByPurchase = hasMonth
+      ? {
+          $or: [
+            { purchaseDate: { $gte: start, $lt: end } },
+            { createdAt: { $gte: start, $lt: end } },
+            { updatedAt: { $gte: start, $lt: end } },
+          ],
+        }
+      : {};
+
+    // =========================
+    // 1) Ambil funnel dari ActivityLog (unik per pelanggan)
+    // =========================
+    const pipelineUnique = [
+      {
+        // Normalisasi field penting
+        $project: {
+          pelangganKey: {
+            $ifNull: ["$pelangganId", { $ifNull: ["$customerId", "$leadId"] }],
+          },
+          type: { $toString: { $ifNull: ["$activityType", "$action"] } },
+          createdAt: { $ifNull: ["$createdAt", "$timestamp"] },
         },
+      },
+      ...(hasMonth
+        ? [{ $match: { createdAt: { $gte: start, $lt: end } } }]
+        : []),
+      {
+        $group: {
+          _id: "$pelangganKey",
+          hasViews: {
+            $max: { $cond: [{ $eq: ["$type", "view_detail"] }, 1, 0] },
+          },
+          hasSim: {
+            $max: { $cond: [{ $eq: ["$type", "simulasi_kredit"] }, 1, 0] },
+          },
+          hasTest: {
+            $max: { $cond: [{ $eq: ["$type", "booking_test_drive"] }, 1, 0] },
+          },
+          hasCash: { $max: { $cond: [{ $eq: ["$type", "beli_cash"] }, 1, 0] } },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          totalVisitors: { $sum: "$hasViews" },
+          interestedCustomers: { $sum: "$hasSim" },
+          engagedCustomers: { $sum: "$hasTest" },
+          hotLeads: { $sum: "$hasCash" },
+        },
+      },
+    ] as any[];
+
+    const aggUnique = await ActivityLog.aggregate(pipelineUnique).catch(
+      () => []
+    );
+
+    let baseCounts = {
+      totalVisitors: 0,
+      interestedCustomers: 0,
+      engagedCustomers: 0,
+      hotLeads: 0,
+    };
+
+    if (aggUnique && aggUnique.length > 0) {
+      const r = aggUnique[0] as any;
+      baseCounts = {
+        totalVisitors: Number(r.totalVisitors || 0),
+        interestedCustomers: Number(r.interestedCustomers || 0),
+        engagedCustomers: Number(r.engagedCustomers || 0),
+        hotLeads: Number(r.hotLeads || 0),
+      };
+    } else {
+      // =========================
+      // 2) Fallback: hitung per jenis aktivitas (event-based)
+      // =========================
+      const countsByType = await ActivityLog.aggregate([
+        {
+          $project: {
+            type: { $toString: { $ifNull: ["$activityType", "$action"] } },
+            createdAt: { $ifNull: ["$createdAt", "$timestamp"] },
+          },
+        },
+        ...(hasMonth
+          ? [{ $match: { createdAt: { $gte: start, $lt: end } } }]
+          : []),
+        { $group: { _id: "$type", cnt: { $sum: 1 } } },
+      ]).catch(() => []);
+
+      const map: Record<string, number> = {};
+      countsByType.forEach((d: any) => (map[d._id] = Number(d.cnt || 0)));
+
+      baseCounts = {
+        totalVisitors: Number(map["view_detail"] || 0),
+        interestedCustomers: Number(map["simulasi_kredit"] || 0),
+        engagedCustomers: Number(map["booking_test_drive"] || 0),
+        hotLeads: Number(map["beli_cash"] || 0),
       };
     }
 
-    // Get customer journey data
-    const journeyData = await buildCustomerJourney(dateFilter);
+    // =========================
+    // 3) Customer dari Pelanggan Purchased (tanggal fleksibel)
+    // =========================
+    const purchasedCount = await Pelanggan.countDocuments({
+      status: "Purchased",
+      ...(hasMonth ? matchByPurchase : {}),
+    }).catch(() => 0);
 
-    // Get conversion rates
-    const conversionRates = await calculateConversionRates(dateFilter);
+    const customers =
+      Number(purchasedCount || 0) > 0
+        ? Number(purchasedCount)
+        : Number(baseCounts.hotLeads || 0); // fallback agar chart tidak kosong total
 
-    // Get customer segments
-    const segments = await getCustomerSegments(dateFilter);
+    // =========================
+    // 4) Data untuk chart (Number semua)
+    // =========================
+    const journey = [
+      { stage: "Visitor", count: Number(baseCounts.totalVisitors || 0) },
+      {
+        stage: "Interested",
+        count: Number(baseCounts.interestedCustomers || 0),
+      },
+      { stage: "Engaged", count: Number(baseCounts.engagedCustomers || 0) },
+      { stage: "Hot Lead", count: Number(baseCounts.hotLeads || 0) },
+      { stage: "Customer", count: Number(customers || 0) },
+    ];
+
+    // =========================
+    // 5) Conversion rates berdasar journey
+    // =========================
+    const v = journey[0].count;
+    const i = journey[1].count;
+    const h = journey[3].count;
+    const c = journey[4].count;
+
+    const conversions = [
+      { name: "Visitor to Interested", value: pct(i, v) },
+      { name: "Interested to Hot Lead", value: pct(h, i) },
+      { name: "Overall Conversion", value: pct(c, v) },
+    ];
+
+    // =========================
+    // 6) Segments (optional, aman nullables)
+    // =========================
+    const segments = await Pelanggan.aggregate([
+      ...(hasMonth
+        ? [
+            {
+              $match: {
+                $or: [
+                  { createdAt: { $gte: start, $lt: end } },
+                  { updatedAt: { $gte: start, $lt: end } },
+                  { purchaseDate: { $gte: start, $lt: end } },
+                ],
+              },
+            },
+          ]
+        : []),
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+          avgInteractions: { $avg: { $ifNull: ["$totalInteractions", 0] } },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1,
+          avgInteractions: { $round: ["$avgInteractions", 1] },
+        },
+      },
+      { $sort: { count: -1 } },
+    ]).catch(() => []);
 
     return NextResponse.json({
       success: true,
       data: {
-        journey: journeyData,
-        conversions: conversionRates,
+        journey,
+        conversions,
         segments,
-        insights: generateJourneyInsights(journeyData, conversionRates),
+        insights: generateJourneyInsights(journey, conversions),
       },
       meta: {
-        period: { year, month },
+        period: { year: year ?? null, month: month ?? null },
         timestamp: new Date().toISOString(),
       },
     });
-  } catch (error) {
-    console.error("Error in customer journey analytics:", error);
-
+  } catch (err) {
+    console.error("[customer-journey] error:", err);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch customer journey data",
-      },
+      { success: false, error: "Failed to fetch customer journey data" },
       { status: 500 }
     );
   }
 }
 
-async function buildCustomerJourney(dateFilter: any) {
-  // Customer journey funnel stages
-  const stages = [
-    { stage: "Visitor", count: 0, description: "Viewed car details" },
-    { stage: "Interested", count: 0, description: "Simulated credit" },
-    { stage: "Engaged", count: 0, description: "Booked test drive" },
-    { stage: "Hot Lead", count: 0, description: "Made cash offer" },
-    { stage: "Customer", count: 0, description: "Purchased car" },
-  ];
+/* ========== Helpers ========== */
 
-  // Get data from both sources (hybrid approach)
-  const [embeddedData, legacyData] = await Promise.all([
-    getEmbeddedJourneyData(dateFilter),
-    getLegacyJourneyData(dateFilter),
-  ]);
-
-  // Merge and calculate funnel
-  const mergedStats = mergeJourneyStats(embeddedData, legacyData);
-
-  stages[0].count = mergedStats.totalVisitors;
-  stages[1].count = mergedStats.interestedCustomers;
-  stages[2].count = mergedStats.engagedCustomers;
-  stages[3].count = mergedStats.hotLeads;
-  stages[4].count = mergedStats.customers;
-
-  return stages;
-}
-
-async function getEmbeddedJourneyData(dateFilter: any) {
-  const customers = await Pelanggan.find(dateFilter);
-
-  let totalVisitors = 0;
-  let interestedCustomers = 0;
-  let engagedCustomers = 0;
-  let hotLeads = 0;
-  let purchasedCustomers = 0;
-
-  customers.forEach((customer) => {
-    const hasViews = customer.summaryStats?.totalViews > 0;
-    const hasSimulations = customer.summaryStats?.totalSimulasiKredit > 0;
-    const hasTestDrives = customer.summaryStats?.totalTestDrives > 0;
-    const hasOffers = customer.summaryStats?.totalTawaranCash > 0;
-    const isPurchased = customer.status === "Purchased";
-
-    if (hasViews) totalVisitors++;
-    if (hasSimulations) interestedCustomers++;
-    if (hasTestDrives) engagedCustomers++;
-    if (hasOffers) hotLeads++;
-    if (isPurchased) purchasedCustomers++;
-  });
-
-  return {
-    totalVisitors,
-    interestedCustomers,
-    engagedCustomers,
-    hotLeads,
-    customers: purchasedCustomers,
-  };
-}
-
-async function getLegacyJourneyData(dateFilter: any) {
-  const pipeline = [
-    { $match: dateFilter },
-    {
-      $group: {
-        _id: "$pelangganId",
-        activities: { $push: "$activityType" },
-      },
-    },
-    {
-      $project: {
-        hasViews: { $in: ["view_detail", "$activities"] },
-        hasSimulations: { $in: ["simulasi_kredit", "$activities"] },
-        hasTestDrives: { $in: ["booking_test_drive", "$activities"] },
-        hasOffers: { $in: ["beli_cash", "$activities"] },
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        totalVisitors: { $sum: { $cond: ["$hasViews", 1, 0] } },
-        interestedCustomers: { $sum: { $cond: ["$hasSimulations", 1, 0] } },
-        engagedCustomers: { $sum: { $cond: ["$hasTestDrives", 1, 0] } },
-        hotLeads: { $sum: { $cond: ["$hasOffers", 1, 0] } },
-      },
-    },
-  ];
-
-  const result = await ActivityLog.aggregate(pipeline);
-
-  if (result.length === 0) {
-    return {
-      totalVisitors: 0,
-      interestedCustomers: 0,
-      engagedCustomers: 0,
-      hotLeads: 0,
-      customers: 0,
-    };
-  }
-
-  // Get purchased customers from Pelanggan collection
-  const purchasedCount = await Pelanggan.countDocuments({
-    ...dateFilter,
-    status: "Purchased",
-  });
-
-  return {
-    ...result[0],
-    customers: purchasedCount,
-  };
-}
-
-function mergeJourneyStats(embedded: any, legacy: any) {
-  return {
-    totalVisitors: Math.max(embedded.totalVisitors, legacy.totalVisitors),
-    interestedCustomers:
-      embedded.interestedCustomers + legacy.interestedCustomers,
-    engagedCustomers: embedded.engagedCustomers + legacy.engagedCustomers,
-    hotLeads: embedded.hotLeads + legacy.hotLeads,
-    customers: embedded.customers + legacy.customers,
-  };
-}
-
-async function calculateConversionRates(dateFilter: any) {
-  // Get total counts for conversion calculation
-  const totalCustomers = await Pelanggan.countDocuments(dateFilter);
-  const interestedCustomers = await Pelanggan.countDocuments({
-    ...dateFilter,
-    $or: [
-      { status: "Interested" },
-      { "summaryStats.totalSimulasiKredit": { $gt: 0 } },
-    ],
-  });
-
-  const hotLeads = await Pelanggan.countDocuments({
-    ...dateFilter,
-    $or: [
-      { status: "Hot Lead" },
-      { "summaryStats.totalTestDrives": { $gt: 0 } },
-      { "summaryStats.totalTawaranCash": { $gt: 0 } },
-    ],
-  });
-
-  const purchasedCustomers = await Pelanggan.countDocuments({
-    ...dateFilter,
-    status: "Purchased",
-  });
-
-  return [
-    {
-      name: "Visitor to Interested",
-      value:
-        totalCustomers > 0
-          ? Math.round((interestedCustomers / totalCustomers) * 100)
-          : 0,
-    },
-    {
-      name: "Interested to Hot Lead",
-      value:
-        interestedCustomers > 0
-          ? Math.round((hotLeads / interestedCustomers) * 100)
-          : 0,
-    },
-    {
-      name: "Hot Lead to Purchase",
-      value:
-        hotLeads > 0 ? Math.round((purchasedCustomers / hotLeads) * 100) : 0,
-    },
-    {
-      name: "Overall Conversion",
-      value:
-        totalCustomers > 0
-          ? Math.round((purchasedCustomers / totalCustomers) * 100)
-          : 0,
-    },
-  ];
-}
-
-async function getCustomerSegments(dateFilter: any) {
-  const segments = await Pelanggan.aggregate([
-    { $match: dateFilter },
-    {
-      $group: {
-        _id: "$status",
-        count: { $sum: 1 },
-        avgInteractions: { $avg: "$totalInteractions" },
-      },
-    },
-    {
-      $project: {
-        status: "$_id",
-        count: 1,
-        avgInteractions: { $round: ["$avgInteractions", 1] },
-      },
-    },
-    { $sort: { count: -1 } },
-  ]);
-
-  return segments;
+function pct(num: number, den: number) {
+  if (!den || den <= 0) return 0;
+  return Number(((Number(num || 0) / Number(den)) * 100).toFixed(2));
 }
 
 function generateJourneyInsights(journey: any[], conversions: any[]) {
-  const insights = [];
-
-  // Journey drop-off analysis
-  const maxDropOff = journey.reduce(
-    (max, current, index) => {
-      if (index === 0) return max;
-      const previous = journey[index - 1];
-      const dropOffRate =
-        ((previous.count - current.count) / previous.count) * 100;
-      return dropOffRate > max.rate
-        ? { stage: current.stage, rate: dropOffRate }
-        : max;
-    },
-    { stage: "", rate: 0 }
-  );
-
-  if (maxDropOff.rate > 50) {
+  const insights: any[] = [];
+  let max = { stage: "", rate: 0 };
+  for (let i = 1; i < journey.length; i++) {
+    const prev = Number(journey[i - 1].count || 0);
+    const cur = Number(journey[i].count || 0);
+    if (prev <= 0) continue;
+    const drop = ((prev - cur) / prev) * 100;
+    if (drop > max.rate) max = { stage: journey[i].stage, rate: drop };
+  }
+  if (max.rate > 50) {
     insights.push({
       type: "warning",
       title: "High Drop-off Detected",
-      message: `${maxDropOff.rate.toFixed(1)}% drop-off at ${
-        maxDropOff.stage
-      } stage`,
-      actionable: `Focus on improving ${maxDropOff.stage.toLowerCase()} experience`,
+      message: `${max.rate.toFixed(1)}% drop-off at ${max.stage} stage`,
+      actionable: `Improve ${max.stage.toLowerCase()} experience`,
     });
   }
-
-  // Conversion rate analysis
-  const overallConversion = conversions.find(
-    (c) => c.name === "Overall Conversion"
-  );
-  if (overallConversion) {
-    if (overallConversion.value < 5) {
-      insights.push({
-        type: "alert",
-        title: "Low Conversion Rate",
-        message: `Overall conversion is ${overallConversion.value}%`,
-        actionable: "Review pricing strategy and follow-up processes",
-      });
-    } else if (overallConversion.value > 15) {
-      insights.push({
-        type: "success",
-        title: "Excellent Conversion Rate",
-        message: `Overall conversion is ${overallConversion.value}%`,
-        actionable: "Consider increasing marketing spend to scale success",
-      });
-    }
-  }
-
-  // Hot lead conversion
-  const hotLeadConversion = conversions.find(
-    (c) => c.name === "Hot Lead to Purchase"
-  );
-  if (hotLeadConversion && hotLeadConversion.value > 70) {
+  const overall = conversions.find((c: any) => c.name === "Overall Conversion");
+  if (overall && overall.value < 5) {
     insights.push({
-      type: "success",
-      title: "Strong Closing Rate",
-      message: `${hotLeadConversion.value}% of hot leads convert to sales`,
-      actionable: "Focus on generating more hot leads",
+      type: "alert",
+      title: "Low Conversion Rate",
+      message: `Overall conversion is ${overall.value}%`,
+      actionable: "Review pricing and follow-ups",
     });
   }
-
   return insights;
 }

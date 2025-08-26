@@ -1,204 +1,201 @@
 // src/lib/customerService.ts
 import connectMongo from "@/lib/conn";
-import Pelanggan from "@/models/Pelanggan";
 import ActivityLog from "@/models/ActivityLog";
+import Mobil from "@/models/Mobil"; // SESUAIKAN jika nama model/paths berbeda
 
-interface CustomerData {
-  nama: string;
-  noHp: string;
-  mobilId: string;
-  activityType:
-    | "view_detail"
-    | "beli_cash"
-    | "simulasi_kredit"
-    | "booking_test_drive";
-  additionalData?: any;
-}
-
-export async function saveCustomerActivity(data: CustomerData) {
-  try {
-    await connectMongo();
-
-    // Format nomor HP
-    const formattedHp = formatWhatsappNumber(data.noHp);
-
-    // Cari atau buat pelanggan
-    let pelanggan = await Pelanggan.findOne({ noHp: formattedHp });
-
-    if (!pelanggan) {
-      // Buat pelanggan baru
-      pelanggan = new Pelanggan({
-        nama: data.nama.trim(),
-        noHp: formattedHp,
-        status: "Belum Di Follow Up",
-        totalInteractions: 1,
-      });
-      await pelanggan.save();
-    } else {
-      // Update pelanggan existing
-      pelanggan.nama = data.nama.trim(); // Update nama jika berubah
-      pelanggan.lastActivity = new Date();
-      pelanggan.totalInteractions += 1;
-      await pelanggan.save();
-    }
-
-    // Simpan activity log
-    const activityLog = new ActivityLog({
-      pelangganId: pelanggan._id,
-      mobilId: data.mobilId,
-      activityType: data.activityType,
-      additionalData: data.additionalData || {},
-    });
-    await activityLog.save();
-
-    return { success: true, pelangganId: pelanggan._id };
-  } catch (error) {
-    console.error("Error saving customer activity:", error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
-}
-
-function formatWhatsappNumber(number: string): string {
-  const cleanNumber = number.replace(/\D/g, "");
-
-  if (cleanNumber.startsWith("08")) {
-    return "+62" + cleanNumber.substring(1);
-  } else if (cleanNumber.startsWith("8")) {
-    return "+62" + cleanNumber;
-  } else if (cleanNumber.startsWith("628")) {
-    return "+" + cleanNumber;
-  } else if (cleanNumber.startsWith("62")) {
-    return "+" + cleanNumber;
-  }
-
-  return number;
-}
-
-// Analytics functions
+/**
+ * Ambil analytics per-mobil berbasis ActivityLog dalam periode yang dipilih.
+ * Menghasilkan array data per mobil dengan view/simulasi/test-drive/cash offer.
+ */
 export async function getMobilAnalytics(year?: number, month?: number) {
-  try {
-    await connectMongo();
+  await connectMongo();
 
-    const matchCondition: any = {};
+  const hasMonth = Boolean(year && month);
+  const start = hasMonth
+    ? new Date(Date.UTC(year!, month! - 1, 1, 0, 0, 0))
+    : undefined;
+  const end = hasMonth
+    ? new Date(Date.UTC(year!, month!, 1, 0, 0, 0))
+    : undefined;
 
-    if (year || month) {
-      const dateFilter: any = {};
-      if (year) dateFilter.$gte = new Date(year, month ? month - 1 : 0, 1);
-      if (year && month) {
-        dateFilter.$lt = new Date(year, month, 1);
-      } else if (year) {
-        dateFilter.$lt = new Date(year + 1, 0, 1);
-      }
-      matchCondition.createdAt = dateFilter;
-    }
+  const pipeline: any[] = [
+    {
+      $project: {
+        mobilIdRaw: "$mobilId",
+        type: { $toString: { $ifNull: ["$activityType", "$action"] } },
+        createdAt: { $ifNull: ["$createdAt", "$timestamp"] },
+      },
+    },
+    ...(hasMonth ? [{ $match: { createdAt: { $gte: start, $lt: end } } }] : []),
 
-    const analytics = await ActivityLog.aggregate([
-      { $match: matchCondition },
-      {
-        $lookup: {
-          from: "mobils",
-          localField: "mobilId",
-          foreignField: "_id",
-          as: "mobil",
+    {
+      $addFields: {
+        mobilKey: {
+          $cond: [
+            { $eq: [{ $type: "$mobilIdRaw" }, "string"] },
+            { $toObjectId: "$mobilIdRaw" },
+            "$mobilIdRaw",
+          ],
         },
       },
-      { $unwind: "$mobil" },
-      {
-        $group: {
-          _id: {
-            mobilId: "$mobilId",
-            activityType: "$activityType",
-            merek: "$mobil.merek",
-            tipe: "$mobil.tipe",
-            tahun: "$mobil.tahun",
-            noPol: "$mobil.noPol",
-          },
-          count: { $sum: 1 },
-          lastActivity: { $max: "$createdAt" },
-        },
-      },
-      {
-        $group: {
-          _id: "$_id.mobilId",
-          merek: { $first: "$_id.merek" },
-          tipe: { $first: "$_id.tipe" },
-          tahun: { $first: "$_id.tahun" },
-          noPol: { $first: "$_id.noPol" },
-          activities: {
-            $push: {
-              type: "$_id.activityType",
-              count: "$count",
-              lastActivity: "$lastActivity",
-            },
-          },
-          totalInteractions: { $sum: "$count" },
-        },
-      },
-      { $sort: { totalInteractions: -1 } },
-    ]);
+    },
+    { $match: { mobilKey: { $ne: null } } },
 
-    return analytics;
-  } catch (error) {
-    console.error("Error getting mobil analytics:", error);
-    return [];
-  }
+    {
+      $group: {
+        _id: "$mobilKey",
+        viewCount: {
+          $sum: { $cond: [{ $eq: ["$type", "view_detail"] }, 1, 0] },
+        },
+        creditSimulationCount: {
+          $sum: { $cond: [{ $eq: ["$type", "simulasi_kredit"] }, 1, 0] },
+        },
+        testDriveCount: {
+          $sum: { $cond: [{ $eq: ["$type", "booking_test_drive"] }, 1, 0] },
+        },
+        cashOfferCount: {
+          $sum: { $cond: [{ $eq: ["$type", "beli_cash"] }, 1, 0] },
+        },
+        totalInteractions: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: (Mobil as any).collection.name,
+        localField: "_id",
+        foreignField: "_id",
+        as: "mobil",
+      },
+    },
+    { $unwind: "$mobil" }, // drop baris tanpa mobil valid
+
+    {
+      $project: {
+        _id: 1,
+        merek: "$mobil.merek",
+        tipe: "$mobil.tipe",
+        tahun: "$mobil.tahun",
+        noPol: "$mobil.noPol",
+        harga: "$mobil.harga",
+        viewCount: 1,
+        creditSimulationCount: 1,
+        testDriveCount: 1,
+        cashOfferCount: 1,
+        totalInteractions: 1,
+        totalInquiries: {
+          $add: [
+            "$creditSimulationCount",
+            "$testDriveCount",
+            "$cashOfferCount",
+          ],
+        },
+      },
+    },
+  ];
+
+  const raw = await ActivityLog.aggregate(pipeline);
+
+  return raw.map((r: any) => ({
+    _id: r._id,
+    merek: r.merek ?? "-",
+    tipe: r.tipe ?? "-",
+    tahun: r.tahun ?? null,
+    noPol: r.noPol ?? "-",
+    harga: Number(r.harga ?? 0),
+    viewCount: Number(r.viewCount ?? 0),
+    creditSimulationCount: Number(r.creditSimulationCount ?? 0),
+    testDriveCount: Number(r.testDriveCount ?? 0),
+    cashOfferCount: Number(r.cashOfferCount ?? 0),
+    totalInteractions: Number(r.totalInteractions ?? 0),
+    totalInquiries: Number(r.totalInquiries ?? 0),
+  }));
 }
 
+/**
+ * Top mobil berdasarkan tipe aktivitas tertentu (views/simulasi/test-drive/cash)
+ * dalam periode yang dipilih.
+ */
 export async function getTopMobilsByActivity(
-  activityType: string,
+  activity:
+    | "view_detail"
+    | "simulasi_kredit"
+    | "booking_test_drive"
+    | "beli_cash",
   limit = 10,
   year?: number,
   month?: number
 ) {
-  try {
-    await connectMongo();
+  await connectMongo();
 
-    const matchCondition: any = { activityType };
+  const hasMonth = Boolean(year && month);
+  const start = hasMonth
+    ? new Date(Date.UTC(year!, month! - 1, 1, 0, 0, 0))
+    : undefined;
+  const end = hasMonth
+    ? new Date(Date.UTC(year!, month!, 1, 0, 0, 0))
+    : undefined;
 
-    if (year || month) {
-      const dateFilter: any = {};
-      if (year) dateFilter.$gte = new Date(year, month ? month - 1 : 0, 1);
-      if (year && month) {
-        dateFilter.$lt = new Date(year, month, 1);
-      } else if (year) {
-        dateFilter.$lt = new Date(year + 1, 0, 1);
-      }
-      matchCondition.createdAt = dateFilter;
-    }
+  const pipeline: any[] = [
+    {
+      $project: {
+        mobilIdRaw: "$mobilId",
+        type: { $toString: { $ifNull: ["$activityType", "$action"] } },
+        createdAt: { $ifNull: ["$createdAt", "$timestamp"] },
+      },
+    },
+    ...(hasMonth ? [{ $match: { createdAt: { $gte: start, $lt: end } } }] : []),
 
-    const topMobils = await ActivityLog.aggregate([
-      { $match: matchCondition },
-      {
-        $lookup: {
-          from: "mobils",
-          localField: "mobilId",
-          foreignField: "_id",
-          as: "mobil",
+    { $match: { type: activity } },
+
+    {
+      $addFields: {
+        mobilKey: {
+          $cond: [
+            { $eq: [{ $type: "$mobilIdRaw" }, "string"] },
+            { $toObjectId: "$mobilIdRaw" },
+            "$mobilIdRaw",
+          ],
         },
       },
-      { $unwind: "$mobil" },
-      {
-        $group: {
-          _id: "$mobilId",
-          merek: { $first: "$mobil.merek" },
-          tipe: { $first: "$mobil.tipe" },
-          tahun: { $first: "$mobil.tahun" },
-          noPol: { $first: "$mobil.noPol" },
-          harga: { $first: "$mobil.harga" },
-          count: { $sum: 1 },
-          lastActivity: { $max: "$createdAt" },
-        },
-      },
-      { $sort: { count: -1 } },
-      { $limit: limit },
-    ]);
+    },
+    { $match: { mobilKey: { $ne: null } } },
 
-    return topMobils;
-  } catch (error) {
-    console.error("Error getting top mobils:", error);
-    return [];
-  }
+    { $group: { _id: "$mobilKey", count: { $sum: 1 } } },
+
+    {
+      $lookup: {
+        from: (Mobil as any).collection.name,
+        localField: "_id",
+        foreignField: "_id",
+        as: "mobil",
+      },
+    },
+    { $unwind: "$mobil" },
+
+    {
+      $project: {
+        _id: 1,
+        merek: "$mobil.merek",
+        tipe: "$mobil.tipe",
+        tahun: "$mobil.tahun",
+        noPol: "$mobil.noPol",
+        harga: "$mobil.harga",
+        count: 1,
+      },
+    },
+    { $sort: { count: -1 } },
+    { $limit: limit },
+  ];
+
+  const rows = await ActivityLog.aggregate(pipeline);
+
+  return rows.map((r: any) => ({
+    _id: r._id,
+    merek: r.merek ?? "-",
+    tipe: r.tipe ?? "-",
+    tahun: r.tahun ?? null,
+    noPol: r.noPol ?? "-",
+    harga: Number(r.harga ?? 0),
+    count: Number(r.count ?? 0),
+  }));
 }

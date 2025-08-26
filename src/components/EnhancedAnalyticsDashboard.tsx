@@ -1,7 +1,7 @@
 // src/components/EnhancedAnalyticsDashboard.tsx
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -37,7 +37,7 @@ import {
 interface AnalyticsData {
   mobilAnalytics: any[];
   customerJourney: any[];
-  conversionRates: any;
+  conversionRates: any[];
   topPerformers: any;
   revenueProjections: any[];
 }
@@ -93,19 +93,20 @@ const EnhancedAnalyticsDashboard = () => {
 
   useEffect(() => {
     fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedYear, selectedMonth, dateRange]);
 
   const fetchAnalytics = async () => {
     try {
       setLoading(true);
 
-      const params = new URLSearchParams({
-        year: selectedYear.toString(),
-        ...(selectedMonth && { month: selectedMonth.toString() }),
-        range: dateRange,
-      });
+      // Saat month kosong -> JANGAN kirim year (ambil all-time). Jika month terpilih, kirim keduanya.
+      const params = new URLSearchParams({ range: dateRange });
+      if (selectedMonth !== "") {
+        params.set("year", selectedYear.toString());
+        params.set("month", selectedMonth.toString());
+      }
 
-      // Fetch enhanced analytics data
       const [mobilResponse, customerResponse, revenueResponse] =
         await Promise.all([
           fetch(`/api/analytics/mobil-enhanced?${params}`),
@@ -127,9 +128,24 @@ const EnhancedAnalyticsDashboard = () => {
           topPerformers: mobilData.topPerformers,
           revenueProjections: revenueData.data,
         });
+      } else {
+        setAnalyticsData({
+          mobilAnalytics: [],
+          customerJourney: [],
+          conversionRates: [],
+          topPerformers: {},
+          revenueProjections: [],
+        });
       }
     } catch (error) {
       console.error("Error fetching analytics:", error);
+      setAnalyticsData({
+        mobilAnalytics: [],
+        customerJourney: [],
+        conversionRates: [],
+        topPerformers: {},
+        revenueProjections: [],
+      });
     } finally {
       setLoading(false);
     }
@@ -137,39 +153,56 @@ const EnhancedAnalyticsDashboard = () => {
 
   const generateReport = async () => {
     try {
-      const params = new URLSearchParams({
-        year: selectedYear.toString(),
-        ...(selectedMonth && { month: selectedMonth.toString() }),
-        format: "pdf",
-      });
+      const params = new URLSearchParams({ format: "pdf" });
+      if (selectedMonth !== "") {
+        params.set("year", selectedYear.toString());
+        params.set("month", selectedMonth.toString());
+      }
 
-      const response = await fetch(`/api/analytics/pdf-report?${params}`);
-      const blob = await response.blob();
+      const res = await fetch(`/api/analytics/pdf-report?${params}`);
+      if (!res.ok) throw new Error("PDF generation failed");
 
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `analytics-report-${selectedYear}${
-        selectedMonth ? `-${selectedMonth}` : ""
-      }.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      const contentType = res.headers.get("content-type") || "";
+
+      // Jika PDF valid → download
+      if (contentType.includes("application/pdf")) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `analytics-report-${
+          selectedMonth !== "" ? `${selectedYear}-${selectedMonth}` : "all"
+        }.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        return;
+      }
+
+      // Jika fallback HTML → buka di tab baru
+      const html = await res.text();
+      const w = window.open("", "_blank");
+      if (w) {
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+      } else {
+        alert("Popup diblokir—izinkan popup untuk melihat report.");
+      }
     } catch (error) {
       console.error("Error generating report:", error);
       alert("Gagal generate report");
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
 
   const COLORS = [
     "#3B82F6",
@@ -179,6 +212,45 @@ const EnhancedAnalyticsDashboard = () => {
     "#8B5CF6",
     "#06B6D4",
   ];
+
+  // ========= ⬇️ PENTING: semua hooks (useMemo) dipanggil TANPA conditional, sebelum ada return apa pun
+  // Default aman saat analyticsData belum ada
+  const {
+    mobilAnalytics = [],
+    customerJourney = [],
+    conversionRates = [],
+    topPerformers = {},
+    revenueProjections = [],
+  } = analyticsData || {};
+
+  const journeyData = useMemo(
+    () =>
+      (customerJourney || []).map((s: any) => ({
+        ...s,
+        count: Number(s?.count || 0),
+      })),
+    [customerJourney]
+  );
+
+  const conversionData = useMemo(
+    () =>
+      (conversionRates || []).map((d: any) => ({
+        ...d,
+        value: Number(d?.value || 0),
+      })),
+    [conversionRates]
+  );
+
+  const revenueData = useMemo(
+    () =>
+      (revenueProjections || []).map((d: any) => ({
+        ...d,
+        actual: Number(d?.actual || 0),
+        projected: Number(d?.projected || 0),
+      })),
+    [revenueProjections]
+  );
+  // ========= ⬆️ END: hooks top-level
 
   if (loading) {
     return (
@@ -199,14 +271,6 @@ const EnhancedAnalyticsDashboard = () => {
       </div>
     );
   }
-
-  const {
-    mobilAnalytics,
-    customerJourney,
-    conversionRates,
-    topPerformers,
-    revenueProjections,
-  } = analyticsData;
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -292,7 +356,11 @@ const EnhancedAnalyticsDashboard = () => {
                 <p className="text-sm font-medium text-gray-600">Total Views</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {mobilAnalytics
-                    .reduce((sum, item) => sum + (item.viewCount || 0), 0)
+                    .reduce(
+                      (sum: number, item: any) =>
+                        sum + Number(item.viewCount || 0),
+                      0
+                    )
                     .toLocaleString()}
                 </p>
                 <p className="text-sm text-green-600">+12% vs last month</p>
@@ -309,7 +377,8 @@ const EnhancedAnalyticsDashboard = () => {
                 <p className="text-sm font-medium text-gray-600">Cash Offers</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {mobilAnalytics.reduce(
-                    (sum, item) => sum + (item.cashOfferCount || 0),
+                    (sum: number, item: any) =>
+                      sum + Number(item.cashOfferCount || 0),
                     0
                   )}
                 </p>
@@ -329,7 +398,8 @@ const EnhancedAnalyticsDashboard = () => {
                 </p>
                 <p className="text-2xl font-bold text-gray-900">
                   {mobilAnalytics.reduce(
-                    (sum, item) => sum + (item.creditSimulationCount || 0),
+                    (sum: number, item: any) =>
+                      sum + Number(item.creditSimulationCount || 0),
                     0
                   )}
                 </p>
@@ -347,7 +417,8 @@ const EnhancedAnalyticsDashboard = () => {
                 <p className="text-sm font-medium text-gray-600">Test Drives</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {mobilAnalytics.reduce(
-                    (sum, item) => sum + (item.testDriveCount || 0),
+                    (sum: number, item: any) =>
+                      sum + Number(item.testDriveCount || 0),
                     0
                   )}
                 </p>
@@ -366,11 +437,25 @@ const EnhancedAnalyticsDashboard = () => {
             Customer Journey Funnel
           </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={customerJourney} layout="horizontal">
+            {/* Gunakan layout="vertical" untuk horizontal bars (kategori di Y) */}
+            <BarChart
+              data={journeyData}
+              layout="vertical"
+              margin={{ top: 8, right: 16, bottom: 8, left: 16 }}
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
+              {/* PENTING: dataKey="count" supaya domain dihitung dari nilai count, bukan index */}
+              <XAxis
+                type="number"
+                dataKey="count"
+                allowDecimals={false}
+                domain={[
+                  0,
+                  (dataMax: number) => Math.ceil((Number(dataMax) || 0) * 1.1),
+                ]}
+              />
               <YAxis dataKey="stage" type="category" width={100} />
-              <Tooltip formatter={(value) => [value, "Customers"]} />
+              <Tooltip formatter={(value) => [value as number, "Customers"]} />
               <Bar dataKey="count" fill="#3B82F6" />
             </BarChart>
           </ResponsiveContainer>
@@ -384,7 +469,7 @@ const EnhancedAnalyticsDashboard = () => {
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
-                data={conversionRates}
+                data={conversionData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -395,7 +480,7 @@ const EnhancedAnalyticsDashboard = () => {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {conversionRates.map((entry: any, index: number) => (
+                {(conversionData || []).map((entry: any, index: number) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={COLORS[index % COLORS.length]}
@@ -414,10 +499,10 @@ const EnhancedAnalyticsDashboard = () => {
           Revenue Projections & Trends
         </h3>
         <ResponsiveContainer width="100%" height={400}>
-          <AreaChart data={revenueProjections}>
+          <AreaChart data={revenueData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="month" />
-            <YAxis tickFormatter={(value) => formatCurrency(value)} />
+            <YAxis tickFormatter={(value) => formatCurrency(Number(value))} />
             <Tooltip
               formatter={(value) => [formatCurrency(Number(value)), "Revenue"]}
             />
@@ -548,12 +633,13 @@ const EnhancedAnalyticsDashboard = () => {
               </tr>
             </thead>
             <tbody>
-              {mobilAnalytics.slice(0, 10).map((car: any, index: number) => {
+              {mobilAnalytics.slice(0, 10).map((car: any) => {
                 const score =
-                  (car.viewCount || 0) +
-                  (car.creditSimulationCount || 0) * 3 +
-                  (car.testDriveCount || 0) * 5 +
-                  (car.cashOfferCount || 0) * 7;
+                  Number(car.viewCount || 0) +
+                  Number(car.creditSimulationCount || 0) * 3 +
+                  Number(car.testDriveCount || 0) * 5 +
+                  Number(car.cashOfferCount || 0) * 7;
+
                 return (
                   <tr key={car._id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
@@ -566,58 +652,63 @@ const EnhancedAnalyticsDashboard = () => {
                         </p>
                       </div>
                     </td>
+
                     <td className="text-center py-3 px-4">
                       <div
                         className={`inline-block w-8 h-8 rounded text-white text-xs flex items-center justify-center ${
-                          (car.viewCount || 0) > 10
+                          Number(car.viewCount || 0) > 10
                             ? "bg-blue-600"
-                            : (car.viewCount || 0) > 5
+                            : Number(car.viewCount || 0) > 5
                             ? "bg-blue-400"
                             : "bg-gray-300"
                         }`}
                       >
-                        {car.viewCount || 0}
+                        {Number(car.viewCount || 0)}
                       </div>
                     </td>
+
                     <td className="text-center py-3 px-4">
                       <div
                         className={`inline-block w-8 h-8 rounded text-white text-xs flex items-center justify-center ${
-                          (car.creditSimulationCount || 0) > 3
+                          Number(car.creditSimulationCount || 0) > 3
                             ? "bg-yellow-600"
-                            : (car.creditSimulationCount || 0) > 1
+                            : Number(car.creditSimulationCount || 0) > 1
                             ? "bg-yellow-400"
                             : "bg-gray-300"
                         }`}
                       >
-                        {car.creditSimulationCount || 0}
+                        {Number(car.creditSimulationCount || 0)}
                       </div>
                     </td>
+
                     <td className="text-center py-3 px-4">
                       <div
                         className={`inline-block w-8 h-8 rounded text-white text-xs flex items-center justify-center ${
-                          (car.testDriveCount || 0) > 2
+                          Number(car.testDriveCount || 0) > 2
                             ? "bg-red-600"
-                            : (car.testDriveCount || 0) > 0
+                            : Number(car.testDriveCount || 0) > 0
                             ? "bg-red-400"
                             : "bg-gray-300"
                         }`}
                       >
-                        {car.testDriveCount || 0}
+                        {Number(car.testDriveCount || 0)}
                       </div>
                     </td>
+
                     <td className="text-center py-3 px-4">
                       <div
                         className={`inline-block w-8 h-8 rounded text-white text-xs flex items-center justify-center ${
-                          (car.cashOfferCount || 0) > 1
+                          Number(car.cashOfferCount || 0) > 1
                             ? "bg-green-600"
-                            : (car.cashOfferCount || 0) > 0
+                            : Number(car.cashOfferCount || 0) > 0
                             ? "bg-green-400"
                             : "bg-gray-300"
                         }`}
                       >
-                        {car.cashOfferCount || 0}
+                        {Number(car.cashOfferCount || 0)}
                       </div>
                     </td>
+
                     <td className="text-center py-3 px-4">
                       <div className="flex items-center justify-center">
                         <div className="w-12 bg-gray-200 rounded-full h-2 mr-2">

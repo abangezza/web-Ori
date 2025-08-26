@@ -1,137 +1,159 @@
 // src/app/api/analytics/mobil-enhanced/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { EnhancedCustomerService } from "@/lib/enhancedCustomerService";
+import connectMongo from "@/lib/conn";
+import ActivityLog from "@/models/ActivityLog";
+import Mobil from "@/models/Mobil"; // SESUAIKAN jika nama model/paths berbeda
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+/**
+ * Endpoint analytics per-mobil yang benar-benar terfilter periode.
+ * - Menghitung view/simulasi/test-drive/cashOffer dari ActivityLog dalam rentang [start, end)
+ * - Normalisasi mobilId (string → ObjectId) agar $lookup selalu kena
+ * - Hanya kembalikan baris yang memiliki mobil valid (unwind tanpa preserve)
+ */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const year = searchParams.get("year")
-      ? parseInt(searchParams.get("year")!)
+      ? parseInt(searchParams.get("year") as string, 10)
       : undefined;
     const month = searchParams.get("month")
-      ? parseInt(searchParams.get("month")!)
+      ? parseInt(searchParams.get("month") as string, 10)
       : undefined;
-    const range = searchParams.get("range") || "month";
 
-    // Get enhanced analytics with embedded data
-    const analyticsData =
-      await EnhancedCustomerService.getMobilAnalyticsEnhanced(year, month);
+    await connectMongo();
 
-    // Calculate top performers
-    const topPerformers = calculateTopPerformers(analyticsData);
+    const hasMonth = Boolean(year && month);
+    const start = hasMonth
+      ? new Date(Date.UTC(year!, month! - 1, 1, 0, 0, 0))
+      : undefined;
+    const end = hasMonth
+      ? new Date(Date.UTC(year!, month!, 1, 0, 0, 0))
+      : undefined;
 
-    // Add performance scores
-    const enhancedData = analyticsData.map((item) => ({
-      ...item,
-      performanceScore: calculatePerformanceScore(item),
-      engagementRate: calculateEngagementRate(item),
+    const pipeline: any[] = [
+      {
+        $project: {
+          mobilIdRaw: "$mobilId",
+          type: { $toString: { $ifNull: ["$activityType", "$action"] } },
+          createdAt: { $ifNull: ["$createdAt", "$timestamp"] },
+        },
+      },
+      ...(hasMonth
+        ? [{ $match: { createdAt: { $gte: start, $lt: end } } }]
+        : []),
+
+      // Normalisasi mobilId agar bisa di-join walau tersimpan sebagai string
+      {
+        $addFields: {
+          mobilKey: {
+            $cond: [
+              { $eq: [{ $type: "$mobilIdRaw" }, "string"] },
+              { $toObjectId: "$mobilIdRaw" },
+              "$mobilIdRaw",
+            ],
+          },
+        },
+      },
+      { $match: { mobilKey: { $ne: null } } },
+
+      // Agregasi per mobil
+      {
+        $group: {
+          _id: "$mobilKey",
+          viewCount: {
+            $sum: { $cond: [{ $eq: ["$type", "view_detail"] }, 1, 0] },
+          },
+          creditSimulationCount: {
+            $sum: { $cond: [{ $eq: ["$type", "simulasi_kredit"] }, 1, 0] },
+          },
+          testDriveCount: {
+            $sum: { $cond: [{ $eq: ["$type", "booking_test_drive"] }, 1, 0] },
+          },
+          cashOfferCount: {
+            $sum: { $cond: [{ $eq: ["$type", "beli_cash"] }, 1, 0] },
+          },
+          totalInteractions: { $sum: 1 },
+        },
+      },
+
+      // Join metadata mobil
+      {
+        $lookup: {
+          from: (Mobil as any).collection.name,
+          localField: "_id",
+          foreignField: "_id",
+          as: "mobil",
+        },
+      },
+      // Drop baris tanpa mobil (mencegah tampil "-" kosong)
+      { $unwind: "$mobil" },
+
+      // Bentuk output
+      {
+        $project: {
+          _id: 1,
+          merek: "$mobil.merek",
+          tipe: "$mobil.tipe",
+          tahun: "$mobil.tahun",
+          noPol: "$mobil.noPol",
+          harga: "$mobil.harga",
+          viewCount: 1,
+          creditSimulationCount: 1,
+          testDriveCount: 1,
+          cashOfferCount: 1,
+          totalInteractions: 1,
+          totalInquiries: {
+            $add: [
+              "$creditSimulationCount",
+              "$testDriveCount",
+              "$cashOfferCount",
+            ],
+          },
+        },
+      },
+    ];
+
+    const rows = await ActivityLog.aggregate(pipeline);
+
+    // Safety: pastikan semua numeric adalah number
+    const data = rows.map((r: any) => ({
+      _id: r._id,
+      merek: r.merek ?? "-",
+      tipe: r.tipe ?? "-",
+      tahun: r.tahun ?? null,
+      noPol: r.noPol ?? "-",
+      harga: Number(r.harga ?? 0),
+      viewCount: Number(r.viewCount ?? 0),
+      creditSimulationCount: Number(r.creditSimulationCount ?? 0),
+      testDriveCount: Number(r.testDriveCount ?? 0),
+      cashOfferCount: Number(r.cashOfferCount ?? 0),
+      totalInteractions: Number(r.totalInteractions ?? 0),
+      totalInquiries: Number(r.totalInquiries ?? 0),
     }));
+
+    // Top performers (dipakai kartu list di UI)
+    const mostViewed = [...data].sort((a, b) => b.viewCount - a.viewCount);
+    const mostInquired = [...data].sort(
+      (a, b) => b.totalInquiries - a.totalInquiries
+    );
 
     return NextResponse.json({
       success: true,
-      data: enhancedData.sort(
-        (a, b) => b.performanceScore - a.performanceScore
-      ),
-      topPerformers,
+      data,
+      topPerformers: { mostViewed, mostInquired },
       meta: {
-        period: { year, month, range },
-        totalCars: enhancedData.length,
-        avgPerformanceScore:
-          enhancedData.reduce((sum, item) => sum + item.performanceScore, 0) /
-          enhancedData.length,
-        timestamp: new Date().toISOString(),
+        period: { year: year ?? null, month: month ?? null },
+        totalMobils: data.length,
       },
     });
-  } catch (error) {
-    console.error("Error in mobil-enhanced analytics:", error);
-
+  } catch (err) {
+    console.error("[mobil-enhanced] error:", err);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch enhanced analytics",
-        message:
-          process.env.NODE_ENV === "development"
-            ? error instanceof Error
-              ? error.message
-              : String(error)
-            : "Internal server error",
-      },
+      { success: false, error: "Failed to fetch mobil analytics" },
       { status: 500 }
     );
   }
-}
-
-function calculatePerformanceScore(item: any): number {
-  // Weighted scoring system
-  const weights = {
-    views: 1,
-    creditSimulations: 3,
-    testDrives: 5,
-    cashOffers: 7,
-  };
-
-  return (
-    (item.viewCount || 0) * weights.views +
-    (item.creditSimulationCount || 0) * weights.creditSimulations +
-    (item.testDriveCount || 0) * weights.testDrives +
-    (item.cashOfferCount || 0) * weights.cashOffers
-  );
-}
-
-function calculateEngagementRate(item: any): number {
-  const totalViews = item.viewCount || 0;
-  const totalInteractions =
-    (item.creditSimulationCount || 0) +
-    (item.testDriveCount || 0) +
-    (item.cashOfferCount || 0);
-
-  return totalViews > 0
-    ? Math.round((totalInteractions / totalViews) * 100)
-    : 0;
-}
-
-function calculateTopPerformers(data: any[]) {
-  // Most viewed cars
-  const mostViewed = [...data]
-    .filter((item) => (item.viewCount || 0) > 0)
-    .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
-    .slice(0, 10);
-
-  // Most inquired cars (highest total interactions)
-  const mostInquired = [...data]
-    .map((item) => ({
-      ...item,
-      totalInquiries:
-        (item.creditSimulationCount || 0) +
-        (item.testDriveCount || 0) +
-        (item.cashOfferCount || 0),
-    }))
-    .filter((item) => item.totalInquiries > 0)
-    .sort((a, b) => b.totalInquiries - a.totalInquiries)
-    .slice(0, 10);
-
-  // Best conversion rate (inquiries/views)
-  const bestConversion = [...data]
-    .filter((item) => (item.viewCount || 0) > 5) // Minimum views threshold
-    .map((item) => ({
-      ...item,
-      conversionRate: calculateEngagementRate(item),
-    }))
-    .sort((a, b) => b.conversionRate - a.conversionRate)
-    .slice(0, 10);
-
-  // Hot prospects (recent high activity)
-  const hotProspects = [...data]
-    .filter(
-      (item) => (item.testDriveCount || 0) > 0 || (item.cashOfferCount || 0) > 0
-    )
-    .sort((a, b) => calculatePerformanceScore(b) - calculatePerformanceScore(a))
-    .slice(0, 5);
-
-  return {
-    mostViewed,
-    mostInquired,
-    bestConversion,
-    hotProspects,
-  };
 }

@@ -14,9 +14,7 @@ import {
   DollarSign,
   TrendingUp,
   Clock,
-  Star,
   AlertCircle,
-  CheckCircle2,
   X,
 } from "lucide-react";
 import { PelangganType, CustomerStats } from "@/types/mobil";
@@ -445,11 +443,41 @@ const CustomerDetailModal = ({
     }).format(amount);
   };
 
+  // === Helper kecil agar DP tidak NaN (tanpa ubah UI lain) ===
+  const toNumber = (v: any): number => {
+    if (typeof v === "number" && isFinite(v)) return v;
+    if (typeof v === "string") {
+      const cleaned = v.replace(/[^\d.-]/g, ""); // buang Rp, titik/koma, spasi
+      const n = parseFloat(cleaned);
+      return isFinite(n) ? n : 0;
+    }
+    return 0;
+  };
+
+  /** Ambil nominal DP dari berbagai kemungkinan field; jika hanya % dihitung dari harga */
+  const getDpNominal = (details: any, fallbackPrice?: any) => {
+    const d = details || {};
+    let dp =
+      toNumber(d.dp) ||
+      toNumber(d.downPayment) ||
+      toNumber(d.uangMuka) ||
+      toNumber(d.dpNominal) ||
+      toNumber(d.dpAmount);
+
+    if (!dp) {
+      const pct = toNumber(d.dpPercent ?? d.dpPercentage);
+      const price = toNumber(d.harga ?? d.price ?? fallbackPrice);
+      if (pct && price) dp = Math.round((pct / 100) * price);
+    }
+    return dp;
+  };
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "view_detail":
         return <Eye className="w-4 h-4" />;
       case "test_drive":
+      case "booking_test_drive":
         return <Calendar className="w-4 h-4" />;
       case "simulasi_kredit":
         return <CreditCard className="w-4 h-4" />;
@@ -465,6 +493,7 @@ const CustomerDetailModal = ({
       case "view_detail":
         return "Melihat Detail";
       case "test_drive":
+      case "booking_test_drive":
         return "Test Drive";
       case "simulasi_kredit":
         return "Simulasi Kredit";
@@ -586,63 +615,74 @@ const CustomerDetailModal = ({
                 Riwayat Interaksi
               </h3>
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {customer.interactionHistory.map((interaction, index) => (
-                  <div key={index} className="border rounded-lg p-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        {getActivityIcon(interaction.activityType)}
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {getActivityLabel(interaction.activityType)}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {interaction.mobilInfo.merek}{" "}
-                            {interaction.mobilInfo.tipe} (
-                            {interaction.mobilInfo.tahun})
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {new Intl.DateTimeFormat("id-ID", {
-                          day: "2-digit",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(interaction.timestamp))}
-                      </span>
-                    </div>
+                {customer.interactionHistory.map((interaction, index) => {
+                  // === FIX DP NaN: hitung DP yang benar dari berbagai kemungkinan field ===
+                  const dpNominal = getDpNominal(
+                    interaction.details,
+                    (interaction as any)?.mobilInfo?.harga // fallback kalau tersedia
+                  );
 
-                    {/* Activity Details */}
-                    {interaction.details && (
-                      <div className="mt-2 text-sm text-gray-600">
-                        {interaction.activityType === "simulasi_kredit" && (
-                          <p>
-                            DP: {formatCurrency(interaction.details.dp || 0)},
-                            Tenor: {interaction.details.tenor}
-                          </p>
-                        )}
-                        {interaction.activityType === "beli_cash" && (
-                          <p>
-                            Tawaran:{" "}
-                            {formatCurrency(
-                              interaction.details.hargaTawaran || 0
-                            )}
-                          </p>
-                        )}
-                        {interaction.activityType === "test_drive" && (
-                          <p>
-                            Tanggal:{" "}
-                            {interaction.details.tanggalTest
-                              ? new Date(
-                                  interaction.details.tanggalTest
-                                ).toLocaleDateString("id-ID")
-                              : "-"}
-                          </p>
-                        )}
+                  return (
+                    <div key={index} className="border rounded-lg p-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          {getActivityIcon(interaction.activityType)}
+                          <div>
+                            <p className="font-medium text-gray-900">
+                              {getActivityLabel(interaction.activityType)}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {interaction.mobilInfo.merek}{" "}
+                              {interaction.mobilInfo.tipe} (
+                              {interaction.mobilInfo.tahun})
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Intl.DateTimeFormat("id-ID", {
+                            day: "2-digit",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          }).format(new Date(interaction.timestamp))}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {/* Activity Details */}
+                      {interaction.details && (
+                        <div className="mt-2 text-sm text-gray-600">
+                          {interaction.activityType === "simulasi_kredit" && (
+                            <p>
+                              {/* DI SINI PERBAIKANNYA: tidak akan RpNaN */}
+                              DP: {formatCurrency(dpNominal || 0)}, Tenor:{" "}
+                              {interaction.details.tenor}
+                            </p>
+                          )}
+                          {interaction.activityType === "beli_cash" && (
+                            <p>
+                              Tawaran:{" "}
+                              {formatCurrency(
+                                interaction.details.hargaTawaran || 0
+                              )}
+                            </p>
+                          )}
+                          {(interaction.activityType === "test_drive" ||
+                            interaction.activityType ===
+                              "booking_test_drive") && (
+                            <p>
+                              Tanggal:{" "}
+                              {interaction.details.tanggalTest
+                                ? new Date(
+                                    interaction.details.tanggalTest
+                                  ).toLocaleDateString("id-ID")
+                                : "-"}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
 
                 {customer.interactionHistory.length === 0 && (
                   <p className="text-gray-500 text-center py-4">

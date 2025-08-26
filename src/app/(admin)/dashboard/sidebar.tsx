@@ -1,4 +1,4 @@
-// Update src/app/(admin)/dashboard/sidebar.tsx
+// src/app/(admin)/dashboard/sidebar.tsx - UPDATED WITH CASH OFFERS
 "use client";
 
 import Link from "next/link";
@@ -9,6 +9,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // ✅ UPDATED: Added Cash Offers menu item
   const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: "🏠" },
     { name: "Mobil Tersedia", href: "/dashboard/mobil/tersedia", icon: "🚗" },
@@ -16,6 +17,7 @@ export default function Sidebar() {
     { name: "Seluruh Mobil", href: "/dashboard/mobil", icon: "📋" },
     { name: "Test Drive", href: "/dashboard/booking-test-drive", icon: "🔑" },
     { name: "Customers", href: "/dashboard/customers", icon: "👥" },
+    { name: "Cash Offers", href: "/dashboard/cash-offers", icon: "💰" }, // ✅ NEW MENU ITEM
     { name: "Analytics", href: "/dashboard/analytics", icon: "📊" },
   ];
 
@@ -128,7 +130,7 @@ export default function Sidebar() {
           <div className="text-xs text-orange-200 text-center">
             Radja Auto Car
             <br />
-            Admin Dashboard
+            Enhanced Dashboard
           </div>
         </div>
       </div>

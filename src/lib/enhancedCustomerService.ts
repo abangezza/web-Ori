@@ -1,4 +1,4 @@
-// src/lib/enhancedCustomerService.ts - COMPLETE FIXED VERSION
+// src/lib/enhancedCustomerService.ts — COMPLETE MERGED + DEDUP VERSION
 import connectMongo from "@/lib/conn";
 import Pelanggan from "@/models/Pelanggan";
 import Mobil from "@/models/Mobil";
@@ -36,20 +36,13 @@ export class EnhancedCustomerService {
     try {
       await connectMongo();
 
-      // Format nomor HP
       const formattedHp = BusinessLogic.formatWhatsappNumber(data.noHp);
 
-      // Get mobil info for embedding
       const mobil = await Mobil.findById(data.mobilId);
-      if (!mobil) {
-        return {
-          success: false,
-          error: "Mobil not found",
-        };
-      }
+      if (!mobil) return { success: false, error: "Mobil not found" };
 
-      // Validate cash offer if applicable
-      let validation = null;
+      // Validate cash offer
+      let validation: any = null;
       if (
         data.activityType === "beli_cash" &&
         data.additionalData?.hargaTawaran
@@ -58,21 +51,14 @@ export class EnhancedCustomerService {
           mobil.harga,
           data.additionalData.hargaTawaran
         );
-
         if (!validation.isValid) {
-          return {
-            success: false,
-            error: validation.errorMessage,
-            validation,
-          };
+          return { success: false, error: validation.errorMessage, validation };
         }
       }
 
       // Find or create customer
       let pelanggan = await Pelanggan.findOne({ noHp: formattedHp });
-
       if (!pelanggan) {
-        // Create new customer
         pelanggan = new Pelanggan({
           nama: data.nama.trim(),
           noHp: formattedHp,
@@ -90,30 +76,21 @@ export class EnhancedCustomerService {
           },
         });
       } else {
-        // Update existing customer
         pelanggan.nama = data.nama.trim();
         pelanggan.lastActivity = new Date();
         pelanggan.totalInteractions += 1;
       }
 
-      // Determine new status
+      // Status update
       const statusUpdate = BusinessLogic.updateCustomerStatus(
         data.activityType,
         pelanggan.status
       );
+      if (statusUpdate.shouldUpdate) pelanggan.status = statusUpdate.newStatus;
 
-      if (statusUpdate.shouldUpdate) {
-        pelanggan.status = statusUpdate.newStatus;
-      }
-
-      // Add to interaction history (NEW EMBEDDED DATA)
+      // Interaction history
       const interactionDetails = this.buildInteractionDetails(data);
-
-      // Ensure interactionHistory exists
-      if (!pelanggan.interactionHistory) {
-        pelanggan.interactionHistory = [];
-      }
-
+      if (!pelanggan.interactionHistory) pelanggan.interactionHistory = [];
       pelanggan.interactionHistory.push({
         mobilId: mobil._id,
         mobilInfo: {
@@ -131,23 +108,21 @@ export class EnhancedCustomerService {
         timestamp: new Date(),
       });
 
-      // Update summary stats safely
-      if (typeof pelanggan.updateSummaryStats === "function") {
-        pelanggan.updateSummaryStats();
+      if (typeof (pelanggan as any).updateSummaryStats === "function") {
+        (pelanggan as any).updateSummaryStats();
       }
 
-      // Save customer
       await pelanggan.save();
 
-      // Add to mobil embedded interactions (NEW EMBEDDED DATA)
+      // Embedded interactions pada Mobil
       await this.addMobilInteraction(
-        mobil._id,
-        pelanggan._id,
+        mobil._id.toString(),
+        pelanggan._id.toString(),
         data,
         validation
       );
 
-      // Also save to ActivityLog for backward compatibility and analytics
+      // Legacy log untuk analytics
       const activityLog = new ActivityLog({
         pelangganId: pelanggan._id,
         mobilId: data.mobilId,
@@ -169,6 +144,30 @@ export class EnhancedCustomerService {
         error: error instanceof Error ? error.message : "Unknown error",
       };
     }
+  }
+
+  /**
+   * Tambahan: Improved deduplication key generator
+   */
+  static createUniqueKey(
+    item: any,
+    type: "offer" | "booking" | "interaction"
+  ): string {
+    if (type === "offer") {
+      // For cash offers: customer phone + mobil ID + offer amount
+      return `${item.customerPhone}_${item.mobil._id}_${item.hargaTawaran}`;
+    } else if (type === "booking") {
+      // For test drives: customer phone + mobil ID + date (YYYY-MM-DD only)
+      const testDate = new Date(item.tanggalTest);
+      const dateStr = testDate.toISOString().split("T")[0];
+      return `${item.noHp}_${item.mobil._id}_${dateStr}`;
+    } else if (type === "interaction") {
+      // For interactions: customer phone + activity type + date
+      const timestamp = new Date(item.timestamp);
+      const dateStr = timestamp.toISOString().split("T")[0];
+      return `${item.customerPhone}_${item.activityType}_${dateStr}`;
+    }
+    return item._id?.toString?.() ?? String(item._id);
   }
 
   /**
@@ -198,7 +197,6 @@ export class EnhancedCustomerService {
             },
           };
           break;
-
         case "beli_cash":
           if (validation?.isValid) {
             updateData["$push"] = {
@@ -207,9 +205,9 @@ export class EnhancedCustomerService {
                 customerName: data.nama,
                 customerPhone: BusinessLogic.formatWhatsappNumber(data.noHp),
                 hargaTawaran: data.additionalData.hargaTawaran,
-                hargaAsli: validation.minAcceptable + validation.discount,
-                selisihHarga: validation.discount,
-                persentaseDiskon: validation.discountPercentage,
+                hargaAsli: validation?.minAcceptable + validation?.discount,
+                selisihHarga: validation?.discount,
+                persentaseDiskon: validation?.discountPercentage,
                 status: "pending",
                 timestamp: new Date(),
                 notes: data.additionalData?.notes || "",
@@ -217,7 +215,6 @@ export class EnhancedCustomerService {
             };
           }
           break;
-
         case "simulasi_kredit":
           updateData["$push"] = {
             "interactions.simulasiKredit": {
@@ -240,16 +237,14 @@ export class EnhancedCustomerService {
       }
     } catch (error) {
       console.error("Error adding mobil interaction:", error);
-      // Don't throw error - this is not critical for the main flow
     }
   }
 
   /**
-   * Build interaction details for different activity types
+   * Build interaction details
    */
   private static buildInteractionDetails(data: CustomerActivityData): any {
     const base = data.additionalData || {};
-
     switch (data.activityType) {
       case "view_detail":
         return {
@@ -257,7 +252,6 @@ export class EnhancedCustomerService {
           userAgent: base.userAgent || "",
           referrer: base.referrer || "",
         };
-
       case "test_drive":
       case "booking_test_drive":
         return {
@@ -265,27 +259,21 @@ export class EnhancedCustomerService {
           waktu: base.waktu || "10:00 - 11:00",
           status: "active",
         };
-
       case "simulasi_kredit":
         return {
           dp: base.dp || 0,
           tenor: base.tenorCicilan ? `${base.tenorCicilan} tahun` : "4 tahun",
           angsuran: base.angsuran || 0,
         };
-
       case "beli_cash":
-        return {
-          hargaTawaran: base.hargaTawaran || 0,
-          status: "pending",
-        };
-
+        return { hargaTawaran: base.hargaTawaran || 0, status: "pending" };
       default:
         return base;
     }
   }
 
   /**
-   * Get customer with interaction history (HYBRID - reads from both sources)
+   * HYBRID: Customer + history
    */
   static async getCustomerWithHistory(pelangganId: string): Promise<any> {
     try {
@@ -300,15 +288,11 @@ export class EnhancedCustomerService {
 
       if (!pelanggan) return null;
 
-      // Also get data from old ActivityLog as fallback
       const oldActivities = await ActivityLog.find({ pelangganId })
         .populate("mobilId", "merek tipe tahun noPol harga")
         .sort({ createdAt: -1 });
 
-      return {
-        ...pelanggan.toObject(),
-        fallbackActivities: oldActivities, // For compatibility
-      };
+      return { ...pelanggan.toObject(), fallbackActivities: oldActivities };
     } catch (error) {
       console.error("Error getting customer history:", error);
       return null;
@@ -316,39 +300,38 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * Get all test drive bookings (HYBRID - reads from both sources)
+   * HYBRID: Test drive bookings — FIXED DEDUPLICATION
    */
   static async getAllTestDriveBookings(): Promise<any[]> {
     try {
       await connectMongo();
 
-      const bookings = [];
+      const bookings: any[] = [];
+      const seenKeys = new Set<string>();
 
-      // Get from new embedded structure
-      const mobilsWithBookings = await Mobil.find(
-        { "interactions.testDrives": { $exists: true, $ne: [] } },
-        {
-          merek: 1,
-          tipe: 1,
-          tahun: 1,
-          noPol: 1,
-          harga: 1,
-          "interactions.testDrives": 1,
-        }
+      console.log("🔍 Fetching test drive bookings...");
+
+      // Embedded first (priority)
+      const mobilsWithTestDrives = await Mobil.find({
+        "interactions.testDrives": { $exists: true, $ne: [] },
+      });
+
+      console.log(
+        `📱 Found ${mobilsWithTestDrives.length} mobils with embedded test drives`
       );
 
-      mobilsWithBookings.forEach((mobil) => {
-        if (mobil.interactions?.testDrives) {
-          mobil.interactions.testDrives.forEach((booking) => {
-            bookings.push({
-              _id: booking._id,
-              namaCustomer: booking.namaCustomer,
-              noHp: booking.noHp,
-              tanggalTest: booking.tanggalTest,
-              waktu: booking.waktu || "10:00 - 11:00",
-              status: booking.status,
-              createdAt: booking.createdAt,
-              notes: booking.notes || "",
+      for (const mobil of mobilsWithTestDrives as any[]) {
+        if (mobil.interactions?.testDrives?.length > 0) {
+          for (const testDrive of mobil.interactions.testDrives) {
+            const bookingData = {
+              _id: testDrive._id,
+              namaCustomer: testDrive.namaCustomer,
+              noHp: testDrive.noHp,
+              tanggalTest: testDrive.tanggalTest,
+              waktu: testDrive.waktu,
+              status: testDrive.status,
+              createdAt: testDrive.createdAt,
+              notes: testDrive.notes,
               mobil: {
                 _id: mobil._id,
                 merek: mobil.merek,
@@ -358,49 +341,104 @@ export class EnhancedCustomerService {
                 harga: mobil.harga,
               },
               source: "embedded",
-            });
-          });
-        }
-      });
+            };
 
-      // Get from old TestDriveBooking collection as fallback
+            const key = this.createUniqueKey(bookingData, "booking");
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              bookings.push(bookingData);
+              console.log(
+                `✅ Added embedded booking: ${bookingData.namaCustomer} - ${bookingData.mobil.merek} ${bookingData.mobil.tipe}`
+              );
+            } else {
+              console.log(
+                `⚠️ Skipped duplicate embedded booking: ${bookingData.namaCustomer}`
+              );
+            }
+          }
+        }
+      }
+
+      // Legacy fallback
       try {
-        const oldBookings = await TestDriveBooking.find({})
+        const legacyBookings = await TestDriveBooking.find({})
           .populate("mobilId", "merek tipe tahun noPol harga")
           .sort({ createdAt: -1 });
 
-        oldBookings.forEach((booking) => {
-          if (booking.mobilId) {
-            bookings.push({
-              _id: booking._id,
-              namaCustomer: booking.namaCustomer,
-              noHp: booking.noHp,
-              tanggalTest: booking.tanggalTest,
-              waktu: "10:00 - 11:00", // Default for old data
-              status: new Date() > booking.tanggalTest ? "expired" : "active",
-              createdAt: booking.createdAt,
-              notes: "",
-              mobil: booking.mobilId,
-              source: "legacy",
-            });
+        console.log(
+          `📋 Found ${legacyBookings.length} legacy test drive bookings`
+        );
+
+        for (const booking of legacyBookings as any[]) {
+          if (!booking.mobilId) continue;
+
+          const testDate = new Date(booking.tanggalTest);
+          const isExpired = testDate < new Date();
+
+          const bookingData = {
+            _id: booking._id,
+            namaCustomer: booking.namaCustomer,
+            noHp: booking.noHp,
+            tanggalTest: booking.tanggalTest,
+            waktu: booking.waktu || "10:00 - 11:00",
+            status: isExpired ? "expired" : booking.status || "active",
+            createdAt: booking.createdAt,
+            notes: booking.notes || "",
+            mobil: {
+              _id: booking.mobilId._id,
+              merek: booking.mobilId.merek,
+              tipe: booking.mobilId.tipe,
+              tahun: booking.mobilId.tahun,
+              noPol: booking.mobilId.noPol,
+              harga: booking.mobilId.harga,
+            },
+            source: "legacy",
+          };
+
+          const key = this.createUniqueKey(bookingData, "booking");
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            bookings.push(bookingData);
+            console.log(
+              `✅ Added legacy booking: ${bookingData.namaCustomer} - ${bookingData.mobil.merek} ${bookingData.mobil.tipe}`
+            );
+          } else {
+            console.log(
+              `⚠️ Skipped duplicate legacy booking: ${bookingData.namaCustomer}`
+            );
           }
-        });
+        }
       } catch (error) {
-        console.log("Old test drive bookings not available:", error);
+        console.log(
+          "⚠️ TestDriveBooking model not found, using embedded data only"
+        );
       }
 
-      return bookings.sort(
+      bookings.sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.tanggalTest).getTime() - new Date(a.tanggalTest).getTime()
       );
+
+      console.log(
+        `🎯 Final result: ${bookings.length} unique test drive bookings`
+      );
+      console.log(
+        `📊 Sources: ${
+          bookings.filter((b) => b.source === "embedded").length
+        } embedded, ${
+          bookings.filter((b) => b.source === "legacy").length
+        } legacy`
+      );
+
+      return bookings;
     } catch (error) {
-      console.error("Error getting test drive bookings:", error);
+      console.error("❌ Error getting test drive bookings:", error);
       return [];
     }
   }
 
   /**
-   * Get all customers with enhanced data (HYBRID)
+   * HYBRID: Customers with stats
    */
   static async getAllCustomersWithStats(): Promise<any[]> {
     try {
@@ -410,12 +448,10 @@ export class EnhancedCustomerService {
         .populate("summaryStats.mobilsFavorite", "merek tipe tahun noPol harga")
         .sort({ lastActivity: -1 });
 
-      // Enhance each customer with priority and engagement score
-      const enhancedCustomers = customers.map((customer) => {
-        const customerObj = customer.toObject();
-
+      return customers.map((customer: any) => {
+        const obj = customer.toObject();
         return {
-          ...customerObj,
+          ...obj,
           priority: BusinessLogic.getCustomerPriority(
             customer.summaryStats || {},
             customer.lastActivity,
@@ -431,8 +467,6 @@ export class EnhancedCustomerService {
           ),
         };
       });
-
-      return enhancedCustomers;
     } catch (error) {
       console.error("Error getting customers with stats:", error);
       return [];
@@ -440,66 +474,148 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * Get pending cash offers across all mobils
+   * FIXED DEDUPLICATION: Cash offers (embedded priority + legacy fallback)
+   * Note: mengembalikan SEMUA offer. Jika perlu khusus "pending" saja,
+   * tambahkan `.filter(o => o.status === "pending")` sebelum return.
    */
   static async getPendingCashOffers(): Promise<any[]> {
     try {
       await connectMongo();
 
-      const offers = [];
+      const offers: any[] = [];
+      const seenKeys = new Set<string>();
 
-      const mobilsWithOffers = await Mobil.find(
-        { "interactions.beliCash": { $exists: true, $ne: [] } },
-        {
-          merek: 1,
-          tipe: 1,
-          tahun: 1,
-          noPol: 1,
-          harga: 1,
-          "interactions.beliCash": 1,
-        }
-      );
+      console.log("🔍 Fetching cash offers...");
 
-      mobilsWithOffers.forEach((mobil) => {
-        if (mobil.interactions?.beliCash) {
-          mobil.interactions.beliCash
-            .filter((offer) => offer.status === "pending")
-            .forEach((offer) => {
-              offers.push({
-                _id: offer._id,
-                customerName: offer.customerName,
-                customerPhone: offer.customerPhone,
-                hargaTawaran: offer.hargaTawaran,
-                hargaAsli: offer.hargaAsli,
-                selisihHarga: offer.selisihHarga,
-                persentaseDiskon: offer.persentaseDiskon,
-                timestamp: offer.timestamp,
-                notes: offer.notes || "",
-                mobil: {
-                  _id: mobil._id,
-                  merek: mobil.merek,
-                  tipe: mobil.tipe,
-                  tahun: mobil.tahun,
-                  noPol: mobil.noPol,
-                  harga: mobil.harga,
-                },
-              });
-            });
-        }
+      // Embedded first
+      const mobilsWithOffers = await Mobil.find({
+        "interactions.beliCash": { $exists: true, $ne: [] },
       });
 
-      return offers.sort(
+      console.log(
+        `📱 Found ${mobilsWithOffers.length} mobils with embedded cash offers`
+      );
+
+      for (const mobil of mobilsWithOffers as any[]) {
+        if (mobil.interactions?.beliCash?.length > 0) {
+          for (const cashOffer of mobil.interactions.beliCash) {
+            const offerData = {
+              _id: cashOffer._id,
+              customerName: cashOffer.customerName,
+              customerPhone: cashOffer.customerPhone,
+              hargaTawaran: cashOffer.hargaTawaran,
+              hargaAsli: cashOffer.hargaAsli,
+              selisihHarga: cashOffer.selisihHarga,
+              persentaseDiskon: cashOffer.persentaseDiskon,
+              status: cashOffer.status,
+              timestamp: cashOffer.timestamp,
+              notes: cashOffer.notes,
+              mobil: {
+                _id: mobil._id,
+                merek: mobil.merek,
+                tipe: mobil.tipe,
+                tahun: mobil.tahun,
+                noPol: mobil.noPol,
+                harga: mobil.harga,
+              },
+              source: "embedded",
+            };
+
+            const key = this.createUniqueKey(offerData, "offer");
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              offers.push(offerData);
+              console.log(
+                `✅ Added embedded offer: ${offerData.customerName} - ${offerData.mobil.merek} ${offerData.mobil.tipe}`
+              );
+            } else {
+              console.log(
+                `⚠️ Skipped duplicate embedded offer: ${offerData.customerName}`
+              );
+            }
+          }
+        }
+      }
+
+      // Legacy fallback (ActivityLog)
+      const legacyOffers = await ActivityLog.find({ activityType: "beli_cash" })
+        .populate("pelangganId", "nama noHp")
+        .populate("mobilId", "merek tipe tahun noPol harga")
+        .sort({ createdAt: -1 });
+
+      console.log(
+        `📋 Found ${legacyOffers.length} legacy cash offers in ActivityLog`
+      );
+
+      for (const activity of legacyOffers as any[]) {
+        if (!activity.pelangganId || !activity.mobilId) continue;
+
+        const hargaTawaran = activity.additionalData?.hargaTawaran || 0;
+        const hargaAsli =
+          activity.additionalData?.hargaAsli || activity.mobilId.harga;
+        const selisihHarga = hargaAsli - hargaTawaran;
+        const persentaseDiskon =
+          hargaAsli > 0 ? (selisihHarga / hargaAsli) * 100 : 0;
+
+        const offerData = {
+          _id: activity._id,
+          customerName: activity.pelangganId.nama,
+          customerPhone: activity.pelangganId.noHp,
+          hargaTawaran,
+          hargaAsli,
+          selisihHarga,
+          persentaseDiskon: Math.round(persentaseDiskon * 100) / 100,
+          status: activity.additionalData?.status || "pending",
+          timestamp: activity.createdAt,
+          notes: activity.additionalData?.notes || "",
+          mobil: {
+            _id: activity.mobilId._id,
+            merek: activity.mobilId.merek,
+            tipe: activity.mobilId.tipe,
+            tahun: activity.mobilId.tahun,
+            noPol: activity.mobilId.noPol,
+            harga: activity.mobilId.harga,
+          },
+          source: "legacy",
+        };
+
+        const key = this.createUniqueKey(offerData, "offer");
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          offers.push(offerData);
+          console.log(
+            `✅ Added legacy offer: ${offerData.customerName} - ${offerData.mobil.merek} ${offerData.mobil.tipe}`
+          );
+        } else {
+          console.log(
+            `⚠️ Skipped duplicate legacy offer: ${offerData.customerName}`
+          );
+        }
+      }
+
+      offers.sort(
         (a, b) =>
           new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       );
+
+      console.log(`🎯 Final result: ${offers.length} unique cash offers`);
+      console.log(
+        `📊 Sources: ${
+          offers.filter((o) => o.source === "embedded").length
+        } embedded, ${
+          offers.filter((o) => o.source === "legacy").length
+        } legacy`
+      );
+
+      return offers;
     } catch (error) {
-      console.error("Error getting pending cash offers:", error);
+      console.error("❌ Error getting pending cash offers:", error);
       return [];
     }
   }
 
   /**
-   * Update cash offer status
+   * Update cash offer status (positional + fallback)
    */
   static async updateCashOfferStatus(
     mobilId: string,
@@ -511,10 +627,7 @@ export class EnhancedCustomerService {
       await connectMongo();
 
       const result = await Mobil.updateOne(
-        {
-          _id: mobilId,
-          "interactions.beliCash._id": offerId,
-        },
+        { _id: mobilId, "interactions.beliCash._id": offerId },
         {
           $set: {
             "interactions.beliCash.$.status": status,
@@ -523,18 +636,42 @@ export class EnhancedCustomerService {
           },
         }
       );
+      if (result.modifiedCount > 0)
+        return { success: true, message: `Cash offer ${status} successfully` };
 
-      if (result.modifiedCount > 0) {
+      const mobil = await Mobil.findById(mobilId);
+      const idx =
+        mobil?.interactions?.beliCash?.findIndex(
+          (o: any) => o._id.toString() === offerId
+        ) ?? -1;
+      if (mobil && idx !== -1) {
+        mobil.interactions.beliCash[idx].status = status;
+        mobil.interactions.beliCash[idx].notes =
+          notes || mobil.interactions.beliCash[idx].notes || "";
+        (mobil.interactions.beliCash[idx] as any).updatedAt = new Date();
+        await mobil.save();
+        return { success: true, message: `Cash offer ${status} successfully` };
+      }
+
+      const activity = await ActivityLog.findById(offerId);
+      if (activity && activity.activityType === "beli_cash") {
+        activity.additionalData = {
+          ...activity.additionalData,
+          status,
+          notes: notes || activity.additionalData?.notes,
+          updatedAt: new Date(),
+        };
+        await activity.save();
         return {
           success: true,
-          message: `Cash offer ${status} successfully`,
-        };
-      } else {
-        return {
-          success: false,
-          message: "Cash offer not found or already updated",
+          message: `Cash offer ${status} successfully (legacy)`,
         };
       }
+
+      return {
+        success: false,
+        message: "Cash offer not found or already updated",
+      };
     } catch (error) {
       return {
         success: false,
@@ -544,7 +681,7 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * Update test drive status
+   * Update test drive status (positional + legacy fallback)
    */
   static async updateTestDriveStatus(
     mobilId: string,
@@ -556,10 +693,7 @@ export class EnhancedCustomerService {
       await connectMongo();
 
       const result = await Mobil.updateOne(
-        {
-          _id: mobilId,
-          "interactions.testDrives._id": bookingId,
-        },
+        { _id: mobilId, "interactions.testDrives._id": bookingId },
         {
           $set: {
             "interactions.testDrives.$.status": status,
@@ -568,18 +702,26 @@ export class EnhancedCustomerService {
           },
         }
       );
+      if (result.modifiedCount > 0)
+        return { success: true, message: `Test drive ${status} successfully` };
 
-      if (result.modifiedCount > 0) {
-        return {
-          success: true,
-          message: `Test drive ${status} successfully`,
-        };
-      } else {
-        return {
-          success: false,
-          message: "Test drive booking not found or already updated",
-        };
-      }
+      try {
+        const booking = await TestDriveBooking.findById(bookingId);
+        if (booking) {
+          booking.status = status;
+          if (notes) booking.notes = notes;
+          await booking.save();
+          return {
+            success: true,
+            message: `Test drive ${status} successfully (legacy)`,
+          };
+        }
+      } catch {}
+
+      return {
+        success: false,
+        message: "Test drive booking not found or already updated",
+      };
     } catch (error) {
       return {
         success: false,
@@ -589,28 +731,22 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * Auto-expire old test drive bookings
+   * Auto-expire old test drives (arrayFilters + legacy)
    */
   static async expireOldTestDrives(): Promise<{ expired: number }> {
     try {
       await connectMongo();
 
+      let expiredTotal = 0;
       const expiredTime = BusinessLogic.checkExpiredBookings();
 
-      const result = await Mobil.updateMany(
+      const res = await Mobil.updateMany(
         {
           "interactions.testDrives": {
-            $elemMatch: {
-              status: "active",
-              tanggalTest: { $lt: expiredTime },
-            },
+            $elemMatch: { status: "active", tanggalTest: { $lt: expiredTime } },
           },
         },
-        {
-          $set: {
-            "interactions.testDrives.$[elem].status": "expired",
-          },
-        },
+        { $set: { "interactions.testDrives.$[elem].status": "expired" } },
         {
           arrayFilters: [
             {
@@ -620,8 +756,20 @@ export class EnhancedCustomerService {
           ],
         }
       );
+      expiredTotal += (res as any).modifiedCount || 0;
 
-      return { expired: result.modifiedCount };
+      try {
+        const legacyRes = await TestDriveBooking.updateMany(
+          {
+            status: { $in: ["active", null as any] },
+            tanggalTest: { $lt: expiredTime },
+          },
+          { status: "expired" }
+        );
+        expiredTotal += (legacyRes as any).modifiedCount || 0;
+      } catch {}
+
+      return { expired: expiredTotal };
     } catch (error) {
       console.error("Error expiring old test drives:", error);
       return { expired: 0 };
@@ -629,7 +777,7 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * Get mobil analytics with embedded interactions
+   * Enhanced analytics (embedded + legacy)
    */
   static async getMobilAnalyticsEnhanced(
     year?: number,
@@ -639,7 +787,6 @@ export class EnhancedCustomerService {
       await connectMongo();
 
       const matchCondition: any = {};
-
       if (year || month) {
         const dateFilter: any = {};
         if (year) {
@@ -649,13 +796,11 @@ export class EnhancedCustomerService {
         matchCondition.createdAt = dateFilter;
       }
 
-      // Get analytics from both embedded data and ActivityLogs
       const [embeddedAnalytics, legacyAnalytics] = await Promise.all([
         this.getEmbeddedAnalytics(matchCondition),
         this.getLegacyAnalytics(matchCondition),
       ]);
 
-      // Merge analytics data
       return this.mergeAnalyticsData(embeddedAnalytics, legacyAnalytics);
     } catch (error) {
       console.error("Error getting enhanced analytics:", error);
@@ -663,9 +808,7 @@ export class EnhancedCustomerService {
     }
   }
 
-  private static async getEmbeddedAnalytics(
-    matchCondition: any
-  ): Promise<any[]> {
+  private static async getEmbeddedAnalytics(_: any): Promise<any[]> {
     try {
       return await Mobil.aggregate([
         {
@@ -766,47 +909,38 @@ export class EnhancedCustomerService {
   }
 
   private static mergeAnalyticsData(embedded: any[], legacy: any[]): any[] {
-    const merged = new Map();
-
-    // Add legacy data
-    legacy.forEach((item) => {
-      merged.set(item._id.toString(), item);
-    });
-
-    // Merge with embedded data
+    const merged = new Map<string, any>();
+    legacy.forEach((item) => merged.set(item._id.toString(), item));
     embedded.forEach((item) => {
-      const key = item._id.toString();
+      const key = item._id.toString?.() ?? String(item._id);
       if (merged.has(key)) {
-        const existing = merged.get(key);
+        const ex = merged.get(key);
         merged.set(key, {
-          ...existing,
-          viewCount: existing.viewCount + item.viewCount,
+          ...ex,
+          viewCount: (ex.viewCount || 0) + (item.viewCount || 0),
           creditSimulationCount:
-            existing.creditSimulationCount + item.creditSimulationCount,
-          cashOfferCount: existing.cashOfferCount + item.cashOfferCount,
-          testDriveCount: existing.testDriveCount + item.testDriveCount,
+            (ex.creditSimulationCount || 0) + (item.creditSimulationCount || 0),
+          cashOfferCount: (ex.cashOfferCount || 0) + (item.cashOfferCount || 0),
+          testDriveCount: (ex.testDriveCount || 0) + (item.testDriveCount || 0),
         });
       } else {
         merged.set(key, item);
       }
     });
-
     return Array.from(merged.values());
   }
 
   /**
-   * Get analytics data for dashboard stats
+   * Dashboard stats
    */
   static async getDashboardStats(): Promise<any> {
     try {
       await connectMongo();
-
       const [customerStats, mobilStats, offerStats] = await Promise.all([
         this.getCustomerStats(),
         this.getMobilStats(),
         this.getCashOfferStats(),
       ]);
-
       return {
         customers: customerStats,
         mobils: mobilStats,
@@ -821,13 +955,13 @@ export class EnhancedCustomerService {
 
   private static async getCustomerStats(): Promise<any> {
     const customers = await Pelanggan.find({});
-
-    const stats = {
+    const stats: any = {
       total: customers.length,
       byStatus: {},
-      hotLeads: customers.filter((c) => c.status === "Hot Lead").length,
-      interested: customers.filter((c) => c.status === "Interested").length,
-      readyForFollowUp: customers.filter((c) =>
+      hotLeads: customers.filter((c: any) => c.status === "Hot Lead").length,
+      interested: customers.filter((c: any) => c.status === "Interested")
+        .length,
+      readyForFollowUp: customers.filter((c: any) =>
         BusinessLogic.isReadyForFollowUp(
           c.interactionHistory || [],
           c.lastActivity,
@@ -835,26 +969,22 @@ export class EnhancedCustomerService {
         )
       ).length,
     };
-
-    // Count by status
-    const statusCounts = customers.reduce((acc, customer) => {
-      acc[customer.status] = (acc[customer.status] || 0) + 1;
-      return acc;
-    }, {});
-
+    const statusCounts = customers.reduce(
+      (acc: any, c: any) => ((acc[c.status] = (acc[c.status] || 0) + 1), acc),
+      {}
+    );
     stats.byStatus = statusCounts;
     return stats;
   }
 
   private static async getMobilStats(): Promise<any> {
     const mobils = await Mobil.find({});
-
     return {
       total: mobils.length,
-      available: mobils.filter((m) => m.status === "tersedia").length,
-      sold: mobils.filter((m) => m.status === "terjual").length,
+      available: mobils.filter((m: any) => m.status === "tersedia").length,
+      sold: mobils.filter((m: any) => m.status === "terjual").length,
       withInteractions: mobils.filter(
-        (m) =>
+        (m: any) =>
           m.interactions &&
           ((m.interactions.testDrives &&
             m.interactions.testDrives.length > 0) ||
@@ -866,23 +996,19 @@ export class EnhancedCustomerService {
   }
 
   private static async getCashOfferStats(): Promise<any> {
-    const offers = await this.getPendingCashOffers();
-
-    if (offers.length === 0) {
-      return {
-        total: 0,
-        totalValue: 0,
-        averageDiscount: 0,
-      };
-    }
+    const offers = await this.getPendingCashOffers(); // note: saat ini return semua; sesuaikan bila perlu
+    if (offers.length === 0)
+      return { total: 0, totalValue: 0, averageDiscount: 0 };
 
     const totalValue = offers.reduce(
-      (sum, offer) => sum + offer.hargaTawaran,
+      (sum: number, o: any) => sum + (o.hargaTawaran || 0),
       0
     );
     const averageDiscount =
-      offers.reduce((sum, offer) => sum + offer.persentaseDiskon, 0) /
-      offers.length;
+      offers.reduce(
+        (sum: number, o: any) => sum + (o.persentaseDiskon || 0),
+        0
+      ) / offers.length;
 
     return {
       total: offers.length,
@@ -892,19 +1018,13 @@ export class EnhancedCustomerService {
   }
 
   /**
-   * LEGACY COMPATIBILITY FUNCTIONS
-   * These functions maintain compatibility with existing analytics code
-   */
-
-  /**
-   * Get mobile analytics (original function for backward compatibility)
+   * LEGACY compatibility helpers
    */
   static async getMobilAnalytics(year?: number, month?: number) {
     try {
       await connectMongo();
 
       const matchCondition: any = {};
-
       if (year || month) {
         const dateFilter: any = {};
         if (year) {
@@ -914,11 +1034,8 @@ export class EnhancedCustomerService {
         matchCondition.createdAt = dateFilter;
       }
 
-      // Use enhanced analytics but return in original format
-      const enhancedData = await this.getMobilAnalyticsEnhanced(year, month);
-
-      // Transform to original format for backward compatibility
-      return enhancedData.map((item) => ({
+      const enhanced = await this.getMobilAnalyticsEnhanced(year, month);
+      return enhanced.map((item: any) => ({
         _id: item._id,
         merek: item.merek,
         tipe: item.tipe,
@@ -942,9 +1059,6 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Get top mobils by activity (original function for backward compatibility)
-   */
   static async getTopMobilsByActivity(
     activityType: string,
     limit: number = 10,
@@ -953,24 +1067,22 @@ export class EnhancedCustomerService {
   ) {
     try {
       const analyticsData = await this.getMobilAnalyticsEnhanced(year, month);
-
-      const fieldMap = {
+      const fieldMap: Record<string, string> = {
         view_detail: "viewCount",
         simulasi_kredit: "creditSimulationCount",
         beli_cash: "cashOfferCount",
         booking_test_drive: "testDriveCount",
       };
-
-      const fieldName = fieldMap[activityType] || "viewCount";
+      const field = fieldMap[activityType] || "viewCount";
 
       return analyticsData
-        .filter((item) => (item[fieldName] || 0) > 0)
-        .sort((a, b) => (b[fieldName] || 0) - (a[fieldName] || 0))
+        .filter((i: any) => (i[field] || 0) > 0)
+        .sort((a: any, b: any) => (b[field] || 0) - (a[field] || 0))
         .slice(0, limit)
-        .map((item) => ({
-          ...item,
-          count: item[fieldName] || 0,
-          lastActivity: new Date().toISOString(), // Default value for compatibility
+        .map((i: any) => ({
+          ...i,
+          count: i[field] || 0,
+          lastActivity: new Date().toISOString(),
         }));
     } catch (error) {
       console.error("Error getting top mobils by activity:", error);
@@ -978,20 +1090,12 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Format WhatsApp number (original function for backward compatibility)
-   */
   static formatWhatsappNumber(number: string): string {
     return BusinessLogic.formatWhatsappNumber(number);
   }
 
-  /**
-   * Save customer activity (original function for backward compatibility)
-   */
   static async saveCustomerActivity_Legacy(data: CustomerActivityData) {
     const result = await this.saveCustomerActivity(data);
-
-    // Return in original format for backward compatibility
     return {
       success: result.success,
       pelangganId: result.pelangganId,
@@ -999,15 +1103,14 @@ export class EnhancedCustomerService {
     };
   }
 
-  /**
-   * Get customer by phone number
-   */
   static async getCustomerByPhone(noHp: string): Promise<any> {
     try {
       await connectMongo();
 
       const formattedHp = BusinessLogic.formatWhatsappNumber(noHp);
-      const customer = await Pelanggan.findOne({ noHp: formattedHp }).populate(
+      const customer: any = await Pelanggan.findOne({
+        noHp: formattedHp,
+      }).populate(
         "summaryStats.mobilsFavorite",
         "merek tipe tahun noPol harga"
       );
@@ -1031,9 +1134,6 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Update customer follow up status
-   */
   static async updateCustomerFollowUp(
     customerId: string,
     status: "Sudah Di Follow Up" | "Belum Di Follow Up"
@@ -1043,24 +1143,12 @@ export class EnhancedCustomerService {
 
       const customer = await Pelanggan.findByIdAndUpdate(
         customerId,
-        {
-          status,
-          lastActivity: new Date(),
-        },
+        { status, lastActivity: new Date() },
         { new: true }
       );
+      if (!customer) return { success: false, message: "Customer not found" };
 
-      if (!customer) {
-        return {
-          success: false,
-          message: "Customer not found",
-        };
-      }
-
-      return {
-        success: true,
-        message: `Customer status updated to ${status}`,
-      };
+      return { success: true, message: `Customer status updated to ${status}` };
     } catch (error) {
       console.error("Error updating customer follow up:", error);
       return {
@@ -1070,9 +1158,6 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Get customers with pagination (for existing dashboard compatibility)
-   */
   static async getCustomersWithPagination(
     page: number = 1,
     limit: number = 15,
@@ -1092,26 +1177,18 @@ export class EnhancedCustomerService {
     try {
       await connectMongo();
 
-      // Build query
       const query: any = {};
-
-      if (search) {
+      if (search)
         query.$or = [
           { nama: { $regex: search, $options: "i" } },
           { noHp: { $regex: search, $options: "i" } },
         ];
-      }
+      if (statusFilter) query.status = statusFilter;
 
-      if (statusFilter) {
-        query.status = statusFilter;
-      }
-
-      // Get total count
       const totalItems = await Pelanggan.countDocuments(query);
       const totalPages = Math.ceil(totalItems / limit);
       const skip = (page - 1) * limit;
 
-      // Get customers
       const customers = await Pelanggan.find(query)
         .sort({ lastActivity: -1 })
         .skip(skip)
@@ -1144,25 +1221,15 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Broadcast message to customers
-   */
   static async broadcastMessage(
     message: string,
     targetStatus: string = "all"
-  ): Promise<{
-    success: boolean;
-    totalRecipients: number;
-    results: any[];
-  }> {
+  ): Promise<{ success: boolean; totalRecipients: number; results: any[] }> {
     try {
       await connectMongo();
 
-      // Build query for target customers
       const query: any = {};
-      if (targetStatus !== "all") {
-        query.status = targetStatus;
-      }
+      if (targetStatus !== "all") query.status = targetStatus;
 
       const customers = await Pelanggan.find(query, {
         _id: 1,
@@ -1171,42 +1238,29 @@ export class EnhancedCustomerService {
         status: 1,
       });
 
-      // Simulate broadcast results (replace with actual WhatsApp API integration)
-      const results = customers.map((customer) => ({
-        customerId: customer._id,
-        nama: customer.nama,
-        noHp: customer.noHp,
-        status: "scheduled", // In real implementation, this would be the actual send status
-        message: message,
+      const results = customers.map((c: any) => ({
+        customerId: c._id,
+        nama: c.nama,
+        noHp: c.noHp,
+        status: "scheduled",
+        message,
         timestamp: new Date().toISOString(),
       }));
 
-      return {
-        success: true,
-        totalRecipients: customers.length,
-        results,
-      };
+      return { success: true, totalRecipients: customers.length, results };
     } catch (error) {
       console.error("Error broadcasting message:", error);
-      return {
-        success: false,
-        totalRecipients: 0,
-        results: [],
-      };
+      return { success: false, totalRecipients: 0, results: [] };
     }
   }
 
-  /**
-   * Get customer interaction summary
-   */
   static async getCustomerInteractionSummary(customerId: string): Promise<any> {
     try {
       await connectMongo();
 
-      const customer = await Pelanggan.findById(customerId);
+      const customer: any = await Pelanggan.findById(customerId);
       if (!customer) return null;
 
-      // Get interaction counts from both embedded and legacy data
       const embeddedCounts = {
         totalViews: customer.summaryStats?.totalViews || 0,
         totalTestDrives: customer.summaryStats?.totalTestDrives || 0,
@@ -1214,7 +1268,6 @@ export class EnhancedCustomerService {
         totalTawaranCash: customer.summaryStats?.totalTawaranCash || 0,
       };
 
-      // Get legacy counts as fallback
       const legacyCounts = await ActivityLog.aggregate([
         { $match: { pelangganId: customer._id } },
         {
@@ -1249,7 +1302,6 @@ export class EnhancedCustomerService {
         testDrives: 0,
       };
 
-      // Combine counts
       const totalCounts = {
         totalViews: embeddedCounts.totalViews + legacy.viewDetails,
         totalTestDrives: embeddedCounts.totalTestDrives + legacy.testDrives,
@@ -1281,9 +1333,6 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Get recent customer activities (last 30 days)
-   */
   static async getRecentCustomerActivities(limit: number = 50): Promise<any[]> {
     try {
       await connectMongo();
@@ -1291,7 +1340,6 @@ export class EnhancedCustomerService {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      // Get recent activities from ActivityLog
       const activities = await ActivityLog.find({
         createdAt: { $gte: thirtyDaysAgo },
       })
@@ -1300,13 +1348,13 @@ export class EnhancedCustomerService {
         .sort({ createdAt: -1 })
         .limit(limit);
 
-      return activities.map((activity) => ({
-        _id: activity._id,
-        customer: activity.pelangganId,
-        mobil: activity.mobilId,
-        activityType: activity.activityType,
-        additionalData: activity.additionalData,
-        timestamp: activity.createdAt,
+      return activities.map((a: any) => ({
+        _id: a._id,
+        customer: a.pelangganId,
+        mobil: a.mobilId,
+        activityType: a.activityType,
+        additionalData: a.additionalData,
+        timestamp: a.createdAt,
       }));
     } catch (error) {
       console.error("Error getting recent customer activities:", error);
@@ -1314,9 +1362,6 @@ export class EnhancedCustomerService {
     }
   }
 
-  /**
-   * Get performance metrics for dashboard
-   */
   static async getPerformanceMetrics(): Promise<any> {
     try {
       const [dashboardStats, recentActivities] = await Promise.all([
@@ -1328,7 +1373,6 @@ export class EnhancedCustomerService {
       const lastMonth = new Date();
       lastMonth.setMonth(lastMonth.getMonth() - 1);
 
-      // Get monthly comparison data
       const [thisMonthData, lastMonthData] = await Promise.all([
         this.getMobilAnalyticsEnhanced(
           thisMonth.getFullYear(),
@@ -1340,25 +1384,19 @@ export class EnhancedCustomerService {
         ),
       ]);
 
-      const thisMonthTotal = thisMonthData.reduce(
-        (sum, item) =>
-          sum +
-          (item.viewCount || 0) +
-          (item.creditSimulationCount || 0) +
-          (item.cashOfferCount || 0) +
-          (item.testDriveCount || 0),
-        0
-      );
+      const sumCounts = (arr: any[]) =>
+        arr.reduce(
+          (sum, i) =>
+            sum +
+            (i.viewCount || 0) +
+            (i.creditSimulationCount || 0) +
+            (i.cashOfferCount || 0) +
+            (i.testDriveCount || 0),
+          0
+        );
 
-      const lastMonthTotal = lastMonthData.reduce(
-        (sum, item) =>
-          sum +
-          (item.viewCount || 0) +
-          (item.creditSimulationCount || 0) +
-          (item.cashOfferCount || 0) +
-          (item.testDriveCount || 0),
-        0
-      );
+      const thisMonthTotal = sumCounts(thisMonthData);
+      const lastMonthTotal = sumCounts(lastMonthData);
 
       const growthPercentage =
         lastMonthTotal > 0

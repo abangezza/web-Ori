@@ -1,8 +1,8 @@
-// src/app/(admin)/dashboard/booking-test-drive/page.tsx - UPDATED VERSION
+// src/app/(admin)/dashboard/cash-offers/page.tsx - NEW PAGE
 import React from "react";
-import EnhancedTestDriveManagement from "@/components/EnhancedTestDriveManagement";
+import CashOffersDashboard from "@/components/CashOffersDashboard";
 
-export default async function BookingTestDrivePage() {
+export default function CashOffersPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
@@ -12,11 +12,11 @@ export default async function BookingTestDrivePage() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="mb-4 sm:mb-0">
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
-                  Enhanced Test Drive Management
+                  Cash Offers Management
                 </h1>
                 <p className="mt-2 text-sm sm:text-base lg:text-lg text-gray-600">
-                  Kelola dan pantau semua booking test drive dengan fitur
-                  advanced analytics
+                  Kelola penawaran cash dari pelanggan dengan validasi 9%
+                  otomatis
                 </p>
               </div>
             </div>
@@ -51,16 +51,16 @@ export default async function BookingTestDrivePage() {
             </li>
             <li>
               <span className="text-sm text-gray-900 font-medium">
-                Test Drive Management
+                Cash Offers
               </span>
             </li>
           </ol>
         </nav>
       </div>
 
-      {/* ✅ CHANGED: Using Enhanced Component */}
+      {/* Cash Offers Dashboard */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <EnhancedTestDriveManagement />
+        <CashOffersDashboard />
       </div>
     </div>
   );

@@ -1,11 +1,11 @@
-// scripts/migrate-database.js - Database Migration Script
+// scripts/migrate-database-fixed.js - FIXED VERSION
 const mongoose = require("mongoose");
 
 // Load environment variables
 require("dotenv").config();
 
-console.log("🚀 Starting Database Migration...");
-console.log("================================");
+console.log("🚀 Starting FIXED Database Migration...");
+console.log("=====================================");
 
 async function connectToDatabase() {
   try {
@@ -25,8 +25,10 @@ async function migratePelangganCollection() {
     const db = mongoose.connection.db;
     const collection = db.collection("pelanggans");
 
-    // Update documents that don't have the new fields
-    const result = await collection.updateMany(
+    // FIXED: Separate operations for different updates
+
+    // 1. Add new fields to documents that don't have them
+    const newFieldsResult = await collection.updateMany(
       {
         $or: [
           { interactionHistory: { $exists: false } },
@@ -46,40 +48,47 @@ async function migratePelangganCollection() {
             preferredPriceRange: { min: 0, max: 0 },
           },
         },
-        $addToSet: {
-          status: {
-            $in: [
-              "Belum Di Follow Up",
-              "Sudah Di Follow Up",
-              "Interested",
-              "Hot Lead",
-              "Purchased",
-            ],
-          },
+      }
+    );
+
+    console.log(
+      `✅ Added new fields to ${newFieldsResult.modifiedCount} Pelanggan documents`
+    );
+
+    // 2. FIXED: Fix invalid status values (don't use $addToSet on string field)
+    const validStatuses = [
+      "Belum Di Follow Up",
+      "Sudah Di Follow Up",
+      "Interested",
+      "Hot Lead",
+      "Purchased",
+    ];
+
+    const statusFixResult = await collection.updateMany(
+      {
+        status: { $nin: validStatuses },
+      },
+      {
+        $set: { status: "Belum Di Follow Up" },
+      }
+    );
+
+    console.log(
+      `✅ Fixed ${statusFixResult.modifiedCount} invalid status values`
+    );
+
+    // 3. Add lastActivity to documents that don't have it
+    const lastActivityResult = await collection.updateMany(
+      { lastActivity: { $exists: false } },
+      {
+        $set: {
+          lastActivity: new Date(),
         },
       }
     );
 
-    console.log(`✅ Updated ${result.modifiedCount} Pelanggan documents`);
-
-    // Update status enum to include new values (this will be handled by Mongoose schema)
-    const statusUpdate = await collection.updateMany(
-      {
-        status: {
-          $nin: [
-            "Belum Di Follow Up",
-            "Sudah Di Follow Up",
-            "Interested",
-            "Hot Lead",
-            "Purchased",
-          ],
-        },
-      },
-      { $set: { status: "Belum Di Follow Up" } }
-    );
-
     console.log(
-      `✅ Updated ${statusUpdate.modifiedCount} invalid status values`
+      `✅ Added lastActivity to ${lastActivityResult.modifiedCount} documents`
     );
   } catch (error) {
     console.error("❌ Pelanggan migration failed:", error.message);
@@ -119,35 +128,55 @@ async function createIndexes() {
   try {
     const db = mongoose.connection.db;
 
-    // Pelanggan indexes
-    const pelangganCollection = db.collection("pelanggans");
-    await pelangganCollection.createIndex({ noHp: 1 });
-    await pelangganCollection.createIndex({ status: 1 });
-    await pelangganCollection.createIndex({ lastActivity: -1 });
-    await pelangganCollection.createIndex({ totalInteractions: -1 });
-    await pelangganCollection.createIndex({
+    // FIXED: Handle existing indexes properly
+    async function createIndexSafely(collection, indexSpec, options = {}) {
+      const collectionObj = db.collection(collection);
+      try {
+        await collectionObj.createIndex(indexSpec, options);
+        console.log(
+          `✅ Created index on ${collection}: ${JSON.stringify(indexSpec)}`
+        );
+      } catch (error) {
+        if (error.code === 85 || error.message.includes("already exists")) {
+          console.log(
+            `ℹ️  Index already exists on ${collection}: ${JSON.stringify(
+              indexSpec
+            )}`
+          );
+        } else {
+          console.error(
+            `❌ Failed to create index on ${collection}:`,
+            error.message
+          );
+        }
+      }
+    }
+
+    // Pelanggan indexes (handle existing unique index on noHp)
+    await createIndexSafely("pelanggans", { status: 1 });
+    await createIndexSafely("pelanggans", { lastActivity: -1 });
+    await createIndexSafely("pelanggans", { totalInteractions: -1 });
+    await createIndexSafely("pelanggans", {
       "interactionHistory.activityType": 1,
     });
-    await pelangganCollection.createIndex({
+    await createIndexSafely("pelanggans", {
       "interactionHistory.timestamp": -1,
     });
-    console.log("✅ Pelanggan indexes created");
+    console.log("✅ Pelanggan indexes processed");
 
     // Mobil indexes
-    const mobilCollection = db.collection("mobils");
-    await mobilCollection.createIndex({ status: 1 });
-    await mobilCollection.createIndex({ merek: 1, tipe: 1 });
-    await mobilCollection.createIndex({ harga: 1 });
-    await mobilCollection.createIndex({ "interactions.testDrives.status": 1 });
-    await mobilCollection.createIndex({ "interactions.beliCash.status": 1 });
-    console.log("✅ Mobil indexes created");
+    await createIndexSafely("mobils", { status: 1 });
+    await createIndexSafely("mobils", { merek: 1, tipe: 1 });
+    await createIndexSafely("mobils", { harga: 1 });
+    await createIndexSafely("mobils", { "interactions.testDrives.status": 1 });
+    await createIndexSafely("mobils", { "interactions.beliCash.status": 1 });
+    console.log("✅ Mobil indexes processed");
 
     // ActivityLog indexes (existing)
-    const activityLogCollection = db.collection("activitylogs");
-    await activityLogCollection.createIndex({ pelangganId: 1 });
-    await activityLogCollection.createIndex({ mobilId: 1 });
-    await activityLogCollection.createIndex({ activityType: 1 });
-    await activityLogCollection.createIndex({ createdAt: -1 });
+    await createIndexSafely("activitylogs", { pelangganId: 1 });
+    await createIndexSafely("activitylogs", { mobilId: 1 });
+    await createIndexSafely("activitylogs", { activityType: 1 });
+    await createIndexSafely("activitylogs", { createdAt: -1 });
     console.log("✅ ActivityLog indexes verified");
   } catch (error) {
     console.error("❌ Index creation failed:", error.message);
@@ -192,14 +221,81 @@ async function validateMigration() {
       `   - Mobils with new fields: ${mobilWithNewFields}/${mobilCount}`
     );
 
-    if (
+    // Check specific field samples
+    const samplePelanggan = await db.collection("pelanggans").findOne(
+      { interactionHistory: { $exists: true } },
+      {
+        projection: {
+          nama: 1,
+          interactionHistory: 1,
+          summaryStats: 1,
+          status: 1,
+        },
+      }
+    );
+
+    if (samplePelanggan) {
+      console.log(`📝 Sample Pelanggan Structure:`);
+      console.log(`   - Name: ${samplePelanggan.nama}`);
+      console.log(`   - Status: ${samplePelanggan.status}`);
+      console.log(
+        `   - InteractionHistory: ${
+          Array.isArray(samplePelanggan.interactionHistory)
+            ? "Array"
+            : "Invalid"
+        }`
+      );
+      console.log(
+        `   - SummaryStats: ${
+          samplePelanggan.summaryStats ? "Object" : "Missing"
+        }`
+      );
+    }
+
+    const sampleMobil = await db
+      .collection("mobils")
+      .findOne(
+        { interactions: { $exists: true } },
+        { projection: { merek: 1, tipe: 1, interactions: 1 } }
+      );
+
+    if (sampleMobil) {
+      console.log(`📝 Sample Mobil Structure:`);
+      console.log(`   - Car: ${sampleMobil.merek} ${sampleMobil.tipe}`);
+      console.log(
+        `   - TestDrives: ${
+          Array.isArray(sampleMobil.interactions?.testDrives)
+            ? "Array"
+            : "Invalid"
+        }`
+      );
+      console.log(
+        `   - BeliCash: ${
+          Array.isArray(sampleMobil.interactions?.beliCash)
+            ? "Array"
+            : "Invalid"
+        }`
+      );
+      console.log(
+        `   - SimulasiKredit: ${
+          Array.isArray(sampleMobil.interactions?.simulasiKredit)
+            ? "Array"
+            : "Invalid"
+        }`
+      );
+    }
+
+    const isComplete =
       pelangganWithNewFields === pelangganCount &&
-      mobilWithNewFields === mobilCount
-    ) {
+      mobilWithNewFields === mobilCount;
+
+    if (isComplete) {
       console.log("✅ Migration completed successfully!");
       return true;
     } else {
-      console.log("⚠️  Migration partially completed");
+      console.log(
+        "⚠️  Migration partially completed - some documents may need manual review"
+      );
       return false;
     }
   } catch (error) {
@@ -213,12 +309,13 @@ async function backupCollections() {
 
   try {
     const db = mongoose.connection.db;
+    const timestamp = Date.now();
 
     // Create backup of pelanggans
     const pelanggansBackup = await db.collection("pelanggans").find().toArray();
     if (pelanggansBackup.length > 0) {
       await db
-        .collection("pelanggans_backup_" + Date.now())
+        .collection(`pelanggans_backup_${timestamp}`)
         .insertMany(pelanggansBackup);
       console.log(
         `✅ Backed up ${pelanggansBackup.length} Pelanggan documents`
@@ -229,7 +326,7 @@ async function backupCollections() {
     const mobilsBackup = await db.collection("mobils").find().toArray();
     if (mobilsBackup.length > 0) {
       await db
-        .collection("mobils_backup_" + Date.now())
+        .collection(`mobils_backup_${timestamp}`)
         .insertMany(mobilsBackup);
       console.log(`✅ Backed up ${mobilsBackup.length} Mobil documents`);
     }
@@ -259,16 +356,20 @@ async function runMigration() {
     // Validate migration
     const success = await validateMigration();
 
-    console.log("\n🎉 Migration Process Complete!");
-    console.log("================================");
+    console.log("\n🎉 FIXED Migration Process Complete!");
+    console.log("====================================");
 
     if (success) {
       console.log("✅ All collections successfully migrated");
-      console.log("✅ Indexes created");
+      console.log("✅ Indexes created/verified");
       console.log("✅ Ready for production use");
+      console.log("\n🚀 NEXT STEPS:");
+      console.log("   1. Test new API endpoints");
+      console.log("   2. Update dashboard components");
+      console.log("   3. Verify enhanced features work");
     } else {
       console.log("⚠️  Migration completed with warnings");
-      console.log("🔍 Please check the logs above");
+      console.log("🔍 Some documents may need manual review");
     }
   } catch (error) {
     console.error("❌ Migration failed:", error);
@@ -282,36 +383,19 @@ async function runMigration() {
 const args = process.argv.slice(2);
 if (args.includes("--help") || args.includes("-h")) {
   console.log(`
-🚀 Database Migration Script
-============================
+🚀 FIXED Database Migration Script
+==================================
 
-Usage: node scripts/migrate-database.js [options]
+Usage: node scripts/migrate-database-fixed.js [options]
 
 Options:
   --help, -h     Show this help message
-  --dry-run      Show what would be migrated without making changes
   --force        Skip confirmation prompts
 
-Environment Variables Required:
-  MONGODB_URI    MongoDB connection string
-
 Examples:
-  node scripts/migrate-database.js
-  node scripts/migrate-database.js --dry-run
+  node scripts/migrate-database-fixed.js
+  node scripts/migrate-database-fixed.js --force
   `);
-  process.exit(0);
-}
-
-if (args.includes("--dry-run")) {
-  console.log("🔍 DRY RUN MODE - No changes will be made");
-  console.log("This would:");
-  console.log("1. Connect to database");
-  console.log(
-    "2. Add interactionHistory and summaryStats to Pelanggan documents"
-  );
-  console.log("3. Add interactions field to Mobil documents");
-  console.log("4. Create performance indexes");
-  console.log("5. Validate migration");
   process.exit(0);
 }
 
@@ -326,18 +410,17 @@ if (!process.env.MONGODB_URI) {
 
 // Confirmation prompt (unless --force is used)
 if (!args.includes("--force")) {
-  console.log("⚠️  This will modify your database structure");
-  console.log("💾 Backups will be created automatically");
+  console.log("⚠️  This will fix the previous migration issues");
+  console.log("💾 New backups will be created automatically");
   console.log("");
 
-  // Simple confirmation (you can enhance this with readline if needed)
   const readline = require("readline");
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
   });
 
-  rl.question("Continue with migration? (y/N): ", (answer) => {
+  rl.question("Continue with FIXED migration? (y/N): ", (answer) => {
     rl.close();
     if (answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
       runMigration();
